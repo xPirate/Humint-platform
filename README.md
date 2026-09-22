@@ -28,8 +28,8 @@ account, no cloud service, no telemetry. It is comfortable on a Raspberry Pi
 You need Docker and Docker Compose. Nothing else.
 
 ```bash
-git clone https://github.com/xPirate/Humintelligence.git
-cd Humintelligence
+git clone https://github.com/xPirate/Humint-platform.git
+cd Humint-platform
 cp .env.example .env
 # Open .env and set POSTGRES_PASSWORD to something real.
 docker compose up -d --build
