@@ -1,0 +1,1608 @@
+/* Four palettes, two modes each, one set of tokens.
+ *
+ * TWO AXES, NOT ONE
+ *
+ * `data-palette` on <html> picks the look — terminal, slate, graphite,
+ * archive — and `data-theme` picks light or dark within it. They are separate
+ * because they answer different questions: the palette is what the
+ * organisation wants the tool to look like, and light/dark is about the room
+ * the screen is in. An analyst who takes a laptop outside needs light mode
+ * without being told their employer's chosen look is now something else.
+ *
+ * That split is also why they are stored differently — see the appearance
+ * block in app.js. The palette follows the person's account; the mode stays
+ * per-browser, because it is a fact about that machine and that daylight.
+ *
+ * THE PALETTES
+ *
+ * - terminal   The phosphor-green CRT this tool started as. Unchanged, and
+ *              still the default. Monospace everywhere, which is most of why
+ *              it reads the way it does.
+ * - slate      A neutral blue-grey with a proper UI sans. The one nobody has
+ *              to defend in a procurement meeting.
+ * - graphite   Warm charcoal, bronze accent, tighter radii. An operations
+ *              room rather than a SaaS product. Nothing glows.
+ * - archive    Warm paper, serif headings, oxblood accent. For a team whose
+ *              day is reading and writing reports rather than watching a
+ *              dashboard.
+ *
+ * WHY NO WEBFONTS
+ *
+ * Every stack here is system fonts. This app is expected to run on a Pi on a
+ * network that may have no route to the internet at all, and a theme that
+ * silently falls back to Times because fonts.googleapis.com is unreachable is
+ * worse than one that was never going to load a webfont in the first place.
+ *
+ * SELECTORS
+ *
+ * Every palette block requires the attribute, and the bare `:root` block is
+ * terminal-dark — so with JS disabled the app looks exactly as it always did.
+ * A light block carries both attributes and therefore outranks its own dark
+ * block, whatever the source order. There is no `prefers-color-scheme` query:
+ * the pre-paint script in index.html resolves System to a real value before
+ * first paint, so both attributes are always present and every palette is
+ * defined exactly once rather than duplicated into a media query where the
+ * copies would drift.
+ *
+ * Anything painted on top of an accent/amber/red fill uses --on-* rather than
+ * a literal, because those flip: near-black on neon green, white on oxblood.
+ *
+ * Every foreground/background pair below was checked against WCAG AA — see
+ * the contrast pass in the theme test suite, which walks all eight
+ * combinations rather than the two anyone remembers to look at. */
+
+/* ---------- shared, palette-independent ---------- */
+:root{
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  /* Scrims stay dark in every palette and both modes — they exist to push the
+     page back, and a pale scrim over a pale page pushes nothing back at all. */
+  --scrim:rgba(0,0,0,.6); --scrim-strong:rgba(0,0,0,.82);
+}
+
+/* ---------- terminal (default) ---------- */
+
+/* ---------- Environment scale -------------------------------------------
+   Zones and Location pins share one scale, and it gets its OWN tokens rather
+   than borrowing --accent/--amber/--vehicle as it first did. Those were
+   chosen for other jobs: --accent is whatever colour the palette's
+   personality is, which in graphite is a tan and in archive a dusty pink,
+   so "permissive" and "semi-permissive" came out nearly identical. A scale
+   that has to be read at a glance cannot be assembled from colours picked
+   for something else.
+
+   The scale is the traffic light everyone already knows -- green, yellow,
+   red -- with denied a darker, heavier red beyond non-permissive, and
+   unknown a plain grey that reads as "nobody has said" rather than as a
+   step on the scale.
+
+   Dark values are bright enough to carry at 20% fill over a dark basemap.
+   Light values are darker and more saturated, because the same hue over a
+   pale map washes out completely.
+   ------------------------------------------------------------------- */
+:root, :root[data-palette="terminal"]{
+  --zone-permissive:#2ee66b; --zone-semi:#ffd21e; --zone-non:#ff4d3d;
+  --zone-denied:#c1121f; --zone-unknown:#8b98a5;
+
+  --bg:#030805; --panel:#081a10; --panel-2:#061309; --border:#173a24; --border-soft:#173a2499;
+  --text:#d6ffe2; --text-bright:#baffcf; --muted:#5f9973; --muted-2:#589270;
+  /* --accent-dim is a fill with --on-accent text on it (primary buttons, the
+     avatar, the 'new'/'preferred' chips). At the original #1f8a4d that pairing
+     measured 4.24:1 — under WCAG AA — which the contrast pass caught. Nudged up
+     to clear 4.5 while staying in the same phosphor family. */
+  --accent:#39ff88; --accent-dim:#23a05a; --accent-light:#5dffa0; --accent-rgb:57,255,136;
+  --accent-hover:#39ff88;
+  --amber:#ffb020; --red:#ff3b3b; --teal:#2dd4bf;
+  --event:#c94dff; --source:#2dd4ff; --vehicle:#ff9a3c; --record:#e2cf9c;
+  --on-accent:#04170b; --on-amber:#1a1206; --on-danger:#1a0303;
+  --shadow:rgba(0,0,0,.45); --shadow-soft:rgba(0,0,0,.3);
+  --scrim:rgba(0,0,0,.6); --scrim-strong:rgba(0,0,0,.82);
+  --font-ui: var(--font-mono);
+  --font-display: var(--font-mono);
+  --radius:4px; --radius-lg:8px;
+  --heading-weight:600; --heading-tracking:0;
+  --border-strong:#357a4f;
+}
+:root[data-palette="terminal"][data-theme="light"]{
+  --zone-permissive:#0f7a35; --zone-semi:#9a6b00; --zone-non:#c62410;
+  --zone-denied:#7d0a15; --zone-unknown:#5b6672;
+
+  --bg:#f2f5f2; --panel:#ffffff; --panel-2:#e9ede9; --border:#b6c2b9; --border-soft:#b6c2b999;
+  --text:#111a14; --text-bright:#000000; --muted:#44564b; --muted-2:#5d6f64;
+  --accent:#0a5c2c; --accent-dim:#0a5c2c; --accent-light:#084524; --accent-rgb:10,92,44;
+  --accent-hover:#084524;
+  --amber:#7a4d00; --red:#a01810; --teal:#0a5f57;
+  --event:#6b21a8; --source:#0e5a86; --vehicle:#8a4400; --record:#6e5418;
+  --on-accent:#ffffff; --on-amber:#ffffff; --on-danger:#ffffff;
+  --shadow:rgba(19,32,24,.22); --shadow-soft:rgba(19,32,24,.14);
+  --scrim:rgba(17,26,20,.45); --scrim-strong:rgba(17,26,20,.72);
+  --border-strong:#6b8072;
+}
+
+/* ---------- slate ---------- */
+:root[data-palette="slate"]{
+  --zone-permissive:#2ee66b; --zone-semi:#ffd21e; --zone-non:#ff4d3d;
+  --zone-denied:#c1121f; --zone-unknown:#8b98a5;
+
+  --bg:#0f1419; --panel:#161c23; --panel-2:#10151b; --border:#2a3441; --border-soft:#2a344199;
+  --text:#dfe5ec; --text-bright:#ffffff; --muted:#96a2b1; --muted-2:#828d99;
+  --accent:#6ba4f8; --accent-dim:#2f6fd0; --accent-light:#9cc3fb; --accent-rgb:107,164,248;
+  --accent-hover:#8bb8fa;
+  --amber:#f0a028; --red:#f2685f; --teal:#2dd4bf;
+  --event:#b49bfb; --source:#4cb8f0; --vehicle:#f0a868; --record:#e2cf9c;
+  --on-accent:#ffffff; --on-amber:#1a1206; --on-danger:#1a0303;
+  --shadow:rgba(0,0,0,.5); --shadow-soft:rgba(0,0,0,.32);
+  --scrim:rgba(4,8,12,.62); --scrim-strong:rgba(4,8,12,.84);
+  --font-ui: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-ui);
+  --radius:6px; --radius-lg:10px;
+  --heading-weight:600; --heading-tracking:-0.01em;
+  --border-strong:#5d6c7c;
+}
+:root[data-palette="slate"][data-theme="light"]{
+  --zone-permissive:#0f7a35; --zone-semi:#9a6b00; --zone-non:#c62410;
+  --zone-denied:#7d0a15; --zone-unknown:#5b6672;
+
+  --bg:#f6f8fa; --panel:#ffffff; --panel-2:#eef1f5; --border:#d0d7de; --border-soft:#d0d7de99;
+  --text:#1c2128; --text-bright:#000000; --muted:#57606a; --muted-2:#6e7781;
+  --accent:#0b5cad; --accent-dim:#0b5cad; --accent-light:#084a8c; --accent-rgb:11,92,173;
+  --accent-hover:#084a8c;
+  --amber:#8a5500; --red:#b3261e; --teal:#0f766e;
+  --event:#6d28d9; --source:#0369a1; --vehicle:#9a4a00; --record:#6e5418;
+  --on-accent:#ffffff; --on-amber:#ffffff; --on-danger:#ffffff;
+  --shadow:rgba(27,31,36,.15); --shadow-soft:rgba(27,31,36,.09);
+  --scrim:rgba(27,31,36,.45); --scrim-strong:rgba(27,31,36,.72);
+  --border-strong:#7d8791;
+}
+
+/* ---------- graphite ---------- */
+:root[data-palette="graphite"]{
+  --zone-permissive:#2ee66b; --zone-semi:#ffd21e; --zone-non:#ff4d3d;
+  --zone-denied:#c1121f; --zone-unknown:#8b98a5;
+
+  --bg:#16181a; --panel:#1e2124; --panel-2:#191c1f; --border:#34383d; --border-soft:#34383d99;
+  --text:#e4e6e8; --text-bright:#ffffff; --muted:#9aa0a6; --muted-2:#858b91;
+  --accent:#d9a066; --accent-dim:#8f5c28; --accent-light:#e8bc8d; --accent-rgb:217,160,102;
+  --accent-hover:#e8bc8d;
+  --amber:#d8a13c; --red:#e88178; --teal:#5cb8b0;
+  --event:#b79ae0; --source:#6db6e0; --vehicle:#dda06a; --record:#e2cf9c;
+  --on-accent:#ffffff; --on-amber:#1a1206; --on-danger:#1a0303;
+  --shadow:rgba(0,0,0,.55); --shadow-soft:rgba(0,0,0,.35);
+  --scrim:rgba(8,9,10,.66); --scrim-strong:rgba(8,9,10,.86);
+  --font-ui: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-ui);
+  --radius:3px; --radius-lg:4px;
+  --heading-weight:600; --heading-tracking:0.01em;
+  --border-strong:#656b71;
+}
+:root[data-palette="graphite"][data-theme="light"]{
+  --zone-permissive:#0f7a35; --zone-semi:#9a6b00; --zone-non:#c62410;
+  --zone-denied:#7d0a15; --zone-unknown:#5b6672;
+
+  --bg:#f4f3f1; --panel:#ffffff; --panel-2:#eceae6; --border:#c5c1bb; --border-soft:#c5c1bb99;
+  --text:#1b1a18; --text-bright:#000000; --muted:#5a5650; --muted-2:#6e6a63;
+  --accent:#8a5a22; --accent-dim:#8a5a22; --accent-light:#6d4718; --accent-rgb:138,90,34;
+  --accent-hover:#6d4718;
+  --amber:#7a5410; --red:#a3241a; --teal:#16615c;
+  --event:#5b3a9e; --source:#10527e; --vehicle:#8a5220; --record:#6e5418;
+  --on-accent:#ffffff; --on-amber:#ffffff; --on-danger:#ffffff;
+  --shadow:rgba(28,26,24,.17); --shadow-soft:rgba(28,26,24,.1);
+  --scrim:rgba(28,26,24,.45); --scrim-strong:rgba(28,26,24,.72);
+  --border-strong:#85807a;
+}
+
+/* ---------- archive ---------- */
+:root[data-palette="archive"]{
+  --zone-permissive:#2ee66b; --zone-semi:#ffd21e; --zone-non:#ff4d3d;
+  --zone-denied:#c1121f; --zone-unknown:#8b98a5;
+
+  --bg:#17150f; --panel:#201d16; --panel-2:#1a1812; --border:#3a352b; --border-soft:#3a352b99;
+  --text:#ece7db; --text-bright:#ffffff; --muted:#a49b8c; --muted-2:#908879;
+  --accent:#e09292; --accent-dim:#9a3f3f; --accent-light:#efb5b5; --accent-rgb:224,146,146;
+  --accent-hover:#efb5b5;
+  --amber:#d9a94e; --red:#e88179; --teal:#5cb0a6;
+  --event:#bfa0e2; --source:#7fb6d8; --vehicle:#d6a679; --record:#e2cf9c;
+  --on-accent:#ffffff; --on-amber:#1a1206; --on-danger:#1a0303;
+  --shadow:rgba(0,0,0,.5); --shadow-soft:rgba(0,0,0,.32);
+  --scrim:rgba(12,10,7,.64); --scrim-strong:rgba(12,10,7,.85);
+  --font-ui: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+  --radius:2px; --radius-lg:3px;
+  --heading-weight:600; --heading-tracking:0;
+  --border-strong:#6f6857;
+}
+:root[data-palette="archive"][data-theme="light"]{
+  --zone-permissive:#0f7a35; --zone-semi:#9a6b00; --zone-non:#c62410;
+  --zone-denied:#7d0a15; --zone-unknown:#5b6672;
+
+  --bg:#faf8f4; --panel:#ffffff; --panel-2:#f2efe8; --border:#d5cec1; --border-soft:#d5cec199;
+  --text:#1a1714; --text-bright:#000000; --muted:#5d564c; --muted-2:#736b5e;
+  --accent:#7a2e2e; --accent-dim:#7a2e2e; --accent-light:#5e2222; --accent-rgb:122,46,46;
+  --accent-hover:#5e2222;
+  --amber:#7a5210; --red:#9b2222; --teal:#1f5f57;
+  --event:#5c3a86; --source:#1a4f7a; --vehicle:#7d5324; --record:#6e5418;
+  --on-accent:#ffffff; --on-amber:#ffffff; --on-danger:#ffffff;
+  --shadow:rgba(40,34,24,.16); --shadow-soft:rgba(40,34,24,.1);
+  --scrim:rgba(40,34,24,.45); --scrim-strong:rgba(40,34,24,.72);
+  --border-strong:#867e6d;
+}
+
+/* ---------- monospace, where it carries meaning ----------
+ *
+ * The terminal palette sets --font-ui to the mono stack, so on that palette
+ * these rules change nothing. On the others they keep a monospace face for the
+ * things that are genuinely data rather than prose: identifiers, coordinates,
+ * grid squares, frequencies and channel numbers, phone numbers, and code.
+ *
+ * The test is whether a reader ever needs to compare two of them character by
+ * character, or read one aloud to somebody. A name or a description fails that
+ * test and reads better in the UI face; a Maidenhead grid square passes it. */
+.mono, code, pre, .contact-value, .audit-detail, .audit-object,
+.geocode-coords, .field-row .v-mono{
+  font-family:var(--font-mono);
+  font-variant-ligatures:none;
+}
+
+/* Long words that have to break rather than push the page sideways.
+ *
+ * Real case data is full of tokens with no spaces in them: a transliterated
+ * patronymic, a URL, a file name, a record id. A browser will not break inside
+ * a word by default, so one of those in a narrow column does not wrap — it
+ * spills out of its box and gives the whole document a horizontal scrollbar.
+ * That is what happened on a 13in laptop: the layout was fine, one name was
+ * not.
+ *
+ * `anywhere` rather than `break-word` on purpose. Only `anywhere` lowers the
+ * element's min-content width, and min-content is what a flex or grid item
+ * refuses to shrink below — so `break-word` alone would still have let the
+ * column win the argument. Breaking mid-word is ugly; it is much less ugly
+ * than a sideways-scrolling page.
+ *
+ * Applied to text surfaces, not to chrome: buttons, tabs and legends keep
+ * their words intact, and anything that already ellipsizes (the entity tree,
+ * the mention list) sets white-space:nowrap and is unaffected by this. */
+.detail-header > :first-child, .card-title, .card-meta, .audit-main,
+.map-popup-title, .dash-list, .editor-title, .attention-block,
+.rel-list, .suggestion-head, .zone-note, .review-list{
+  overflow-wrap:anywhere;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;min-height:100%;}
+body{background:var(--bg); color:var(--text); font-family:var(--font-ui); font-size:14px; line-height:1.5;}
+h1,h2,h3,h4{color:var(--text-bright); font-family:var(--font-display);
+  font-weight:var(--heading-weight); letter-spacing:var(--heading-tracking); margin:0 0 .5em;}
+a{color:var(--accent);}
+button{font-family:var(--font-ui); cursor:pointer;}
+input,select,textarea{font-family:var(--font-ui); font-size:14px; background:var(--panel-2); color:var(--text);
+  border:1px solid var(--border-strong); border-radius:var(--radius); padding:.5em .6em;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+[hidden]{display:none!important;}
+
+.btn-primary,.btn-secondary,.btn-danger{
+  border-radius:4px; padding:.5em 1em; font-size:13px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);
+}
+.btn-primary{background:var(--accent-dim); border-color:var(--accent); color:var(--on-accent); font-weight:600;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary:hover{border-color:var(--accent-dim); color:var(--text-bright);}
+.btn-danger{border-color:var(--red); color:var(--red);}
+.btn-danger:hover{background:var(--red); color:var(--on-danger);}
+.btn-link{background:none; border:none; color:var(--accent); padding:0; font-size:13px;}
+.btn-sm{padding:.3em .7em; font-size:12px;}
+
+/* ---------- Auth screens ---------- */
+.auth-screen{min-height:100vh; display:flex; align-items:center; justify-content:center;}
+.auth-box{width:340px; padding:2em; background:var(--panel); border:1px solid var(--border); border-radius:8px;}
+.auth-box h1{font-size:18px; text-align:center; margin-bottom:1.2em;}
+.auth-form{display:flex; flex-direction:column; gap:.9em;}
+.auth-form label{display:flex; flex-direction:column; gap:.3em; font-size:13px; color:var(--muted);}
+.auth-hint{color:var(--muted); font-size:13px;}
+.field-hint{color:var(--muted-2); font-size:11px; margin:-.5em 0 0;}
+.auth-error{color:var(--red); font-size:13px; min-height:1.2em;}
+
+/* ---------- App shell ---------- */
+.app{min-height:100vh; display:flex; flex-direction:column;}
+/* Sticky, and above the assistant panel's z-index (3000): the panel is fixed
+   to the full height of the right edge, so without this it covers the account
+   menu — and since Admin and Log out now live only in that menu, an open
+   assistant panel would make them unreachable. Sticky also keeps the nav in
+   view when scrolling a long entity/report page, which is worth having
+   anyway. Stays below the modal backdrop (5000) and the preview (6000). */
+/* flex-wrap, and gaps that shrink: at a phone's width the brand, six tabs,
+   the search box and the account menu do not fit on one line, and without
+   wrapping they simply run off the right edge and take the page's horizontal
+   scrollbar with them -- every view then scrolls sideways, however well the
+   view itself behaves. */
+.topbar{position:sticky; top:0; z-index:3200; display:flex; flex-wrap:wrap; align-items:center;
+  gap:.6em 1.5em; padding:.7em 1.2em; background:var(--panel); border-bottom:1px solid var(--border);}
+.brand{font-family:var(--font-display); font-weight:700; color:var(--accent-light); letter-spacing:.02em;}
+.tabs{display:flex; flex-wrap:wrap; gap:.3em; flex:1 1 auto; min-width:0;}
+.tab-btn{background:none; border:1px solid transparent; color:var(--muted); padding:.5em .9em; border-radius:4px; font-size:13px;}
+.tab-btn:hover{color:var(--text-bright);}
+.tab-btn.active{color:var(--accent); border-color:var(--border); background:var(--panel-2);}
+.topbar-right{display:flex; align-items:center; gap:.7em; margin-left:auto;}
+
+/* ---------- Account menu (top right) ---------- */
+.user-menu{position:relative;}
+.user-menu-btn{
+  display:flex; align-items:center; gap:.5em;
+  background:none; border:1px solid transparent; border-radius:20px;
+  padding:.25em .6em .25em .25em; color:var(--text); font-family:var(--font-ui); font-size:13px;
+}
+.user-menu-btn:hover,.user-menu-btn.open{border-color:var(--border); background:var(--panel-2);}
+.user-avatar{
+  display:flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:50%; flex:0 0 26px;
+  background:var(--accent-dim); color:var(--on-accent); font-weight:700; font-size:12px;
+}
+.user-menu-name{color:var(--text-bright);}
+.user-menu-caret{color:var(--muted); font-size:10px;}
+/* Above the modal backdrop (5000) so the menu is still usable/dismissable
+   with a modal open, and well clear of Leaflet's panes on the Map view. */
+.user-menu-dropdown{
+  position:absolute; top:calc(100% + 6px); right:0; z-index:5500; min-width:190px;
+  background:var(--panel); border:1px solid var(--border); border-radius:6px;
+  box-shadow:0 8px 20px var(--shadow); overflow:hidden;
+}
+.user-menu-header{padding:.7em .9em; border-bottom:1px solid var(--border); background:var(--panel-2);}
+.user-menu-username{color:var(--text-bright); font-size:13px; font-weight:600;}
+.user-menu-role{color:var(--muted); font-size:11px; margin-top:.1em;}
+/* Appearance switch, inside the account menu. A segmented control rather than
+   a single "dark mode" toggle because there are genuinely three states, and a
+   two-state switch would give someone on System no way back to it. */
+.user-menu-theme{padding:.6em .9em; border-bottom:1px solid var(--border);}
+.user-menu-theme-label{display:block; font-size:11px; text-transform:uppercase;
+  letter-spacing:.04em; color:var(--muted); margin-bottom:.4em;}
+/* Palette picker. A 2x2 grid of named swatches rather than a segmented control
+   like Appearance below it: four options with colour samples do not fit on one
+   row in a 190px menu, and a name alone ("Graphite") tells you nothing about
+   what you are about to get. The chips are hard-coded literals, not tokens —
+   they have to show what each palette looks like while you are standing in a
+   different one. */
+.palette-switch{display:grid; grid-template-columns:1fr 1fr; gap:3px;}
+.palette-opt{display:flex; align-items:center; gap:.4em; text-align:left;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--muted); font-family:var(--font-ui); font-size:11.5px; padding:.35em .45em;}
+.palette-opt:hover{color:var(--text-bright); border-color:var(--border-strong);}
+.palette-opt.active{background:var(--accent-dim); color:var(--on-accent); border-color:var(--accent); font-weight:700;}
+.palette-chip{flex:0 0 auto; width:11px; height:11px; border-radius:2px;
+  border:1px solid rgba(128,128,128,.55);}
+.palette-chip-terminal{background:linear-gradient(135deg,#030805 50%,#39ff88 50%);}
+.palette-chip-slate{background:linear-gradient(135deg,#0f1419 50%,#6ba4f8 50%);}
+.palette-chip-graphite{background:linear-gradient(135deg,#16181a 50%,#d9a066 50%);}
+.palette-chip-archive{background:linear-gradient(135deg,#faf8f4 50%,#7a2e2e 50%);}
+
+.theme-switch{display:flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;}
+.theme-opt{flex:1; background:var(--panel-2); border:none; color:var(--muted);
+  font-family:var(--font-ui); font-size:11.5px; padding:.4em .2em;}
+.theme-opt + .theme-opt{border-left:1px solid var(--border);}
+.theme-opt:hover{color:var(--text-bright);}
+.theme-opt.active{background:var(--accent-dim); color:var(--on-accent); font-weight:700;}
+
+.user-menu-item{
+  display:block; width:100%; text-align:left; background:none; border:none;
+  padding:.6em .9em; color:var(--text); font-family:var(--font-ui); font-size:13px;
+}
+.user-menu-item:hover{background:var(--panel-2); color:var(--text-bright);}
+.user-menu-item-danger:hover{color:var(--red);}
+
+/* ---------- Global search (topbar) ---------- */
+.global-search{position:relative; flex:0 1 240px; min-width:140px;}
+.global-search input{width:100%;}
+/* z-index must clear Leaflet's own panes/controls (max z-index:1000 in
+   leaflet.css) for the same reason the modal needed it — this dropdown is
+   reachable from every view, including the Map, and its nearest positioned
+   ancestor (.global-search, position:relative with no z-index of its own)
+   doesn't box in anything, so without a number well above Leaflet's, the
+   results would paint underneath the map instead of over it. */
+.global-search-results{position:absolute; top:100%; left:0; right:0; z-index:2000; max-height:340px; overflow-y:auto; background:var(--panel); border:1px solid var(--border); border-radius:0 0 6px 6px; margin-top:2px; box-shadow:0 6px 16px var(--shadow-soft);}
+.global-search-section{padding:.35em .7em; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); background:var(--panel-2);}
+.global-search-item{display:flex; align-items:center; gap:.5em; padding:.5em .7em; cursor:pointer; font-size:13px;}
+.global-search-item:hover{background:var(--panel-2);}
+.global-search-empty{padding:.6em .7em; color:var(--muted); font-size:13px;}
+.badge{display:inline-block; min-width:1.4em; text-align:center; background:var(--amber); color:var(--on-amber); border-radius:10px; padding:.05em .45em; font-size:11px; font-weight:700; margin-left:.3em;}
+
+/* A reading-width cap for everything text-shaped — reports, forms, admin —
+   because a 3440px-wide paragraph is unreadable. The Entities view opts out
+   below: it is columns of cards, not prose, and capping it meant six entity
+   types could never use more than four columns however wide the monitor was.
+   Anything else that becomes column-shaped later should opt out the same way
+   rather than the cap being removed globally. */
+.content{flex:1; padding:1.4em; max-width:1200px; width:100%; margin:0 auto;}
+.content:has(> #view-entities.active){max-width:none;}
+.view{display:none;}
+.view.active{display:block;}
+
+/* ---------- Sub-tabs (inside the Review view) ---------- */
+.subtabs{display:flex; gap:.3em; margin-bottom:1.2em; border-bottom:1px solid var(--border);}
+.subtab-btn{
+  background:none; border:none; border-bottom:2px solid transparent;
+  color:var(--muted); padding:.55em .9em; font-size:13px; font-family:var(--font-ui); margin-bottom:-1px;
+}
+.subtab-btn:hover{color:var(--text-bright);}
+.subtab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+.subview{display:none;}
+.subview.active{display:block;}
+
+/* ---------- Relative timestamps ---------- */
+.ts{border-bottom:1px dotted var(--muted-2); cursor:help;}
+
+.view-toolbar{display:flex; align-items:center; gap:.8em; margin-bottom:1.2em; flex-wrap:wrap;}
+.view-toolbar input[type="search"]{flex:1; min-width:200px;}
+.view-hint{color:var(--muted); font-size:12px; margin:0; flex-basis:100%;}
+.inline-check{display:flex; align-items:center; gap:.4em; color:var(--muted); font-size:13px;}
+
+/* ---------- Cards ---------- */
+.card-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:.8em;}
+.card{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.9em; cursor:pointer; transition:border-color .1s;}
+.card:hover{border-color:var(--accent-dim);}
+.card.archived{opacity:.55;}
+
+/* ---------- Entity list: one column per type, only for types present ----------
+   Wraps rather than horizontally scrolling: a fixed-height single-row layout
+   with overflow-x:auto meant that as soon as the columns present didn't all
+   fit the viewport width, the *whole* row became a horizontal-scroll strip —
+   on anything short of a very wide window you'd see one full column and a
+   sliver of the next, with no visual cue that scrolling right would reveal
+   more. Wrapping lets columns that don't fit drop to a new line instead, the
+   same way the plain entity grid always has, so everything stays reachable
+   by the page's normal vertical scroll. */
+/* ---------- The Entities workspace: tree on the left, network on the right ----
+   The tree carries the names and the network carries the shape, so they are
+   sized against each other rather than equally: a fixed-ish column of rows
+   beside everything that is left. Below 900px they stack, tree first --
+   reading a force-directed graph on a phone is not a thing anyone does, but
+   finding a record by name is. */
+.entity-workspace{display:grid; gap:1em; align-items:stretch;
+  grid-template-columns:minmax(260px, 24em) minmax(0, 1fr);
+  /* ONE height for both panes, derived from the window rather than fixed.
+     The graph pane used to have min-height:420px and the tree max-height:70vh,
+     which are fine on a desktop and wrong on a laptop: 420px of graph plus a
+     toolbar, a legend and the page header is taller than the fold on a 13"
+     screen, and min-height cannot shrink, so the page grew a scrollbar and
+     the network ran off the bottom.
+     clamp() keeps it usable at both ends -- never so short it is useless,
+     never taller than the window it is in. */
+  --pane-h:clamp(300px, 58vh, 720px);}
+/* Named cells rather than document order. Auto-placement put the panes in
+   whatever cells were left over, so a paragraph added inside the grid took the
+   tree's cell and pushed the network onto a second row in the narrow column --
+   the list and the network swapped sides and the network came out the size of
+   the sidebar. Pinned, a stray child can only land under them. */
+#entity-list{grid-column:1; grid-row:1;}
+.entity-graph-pane{grid-column:2; grid-row:1;}
+.entity-workspace-hint{margin:0 0 .5em;}
+/* dvh excludes the mobile browser chrome that vh includes, so on a phone this
+   is the height actually on screen rather than the height behind the URL bar. */
+@supports (height:1dvh){ .entity-workspace{--pane-h:clamp(300px, 58dvh, 720px);} }
+@media (max-width: 900px){
+  .entity-workspace{grid-template-columns:minmax(0, 1fr);}
+  /* One column: the panes stack in reading order, tree then network. */
+  #entity-list{grid-column:1; grid-row:auto;}
+  .entity-graph-pane{grid-column:1; grid-row:auto; height:clamp(260px, 48vh, 520px);}
+  /* Stacked, the tree has the whole page to scroll in; capping it here would
+     put a second scrollbar inside the first for no reason. */
+  .entity-tree{max-height:none; overflow-y:visible;}
+}
+
+.entity-tree{display:flex; flex-direction:column; gap:.5em; max-height:var(--pane-h);
+  overflow-y:auto; padding-right:.3em;}
+/* flex:0 0 auto matters: the tree is a scrolling flex column, and without it
+   every group is a shrinkable flex item -- the browser squeezes them all to
+   fit the visible height and .tree-group's own overflow:hidden silently cuts
+   the rows off, so each type shows its first two records and nothing says
+   why. The container scrolls; the groups keep their full height. */
+.tree-group{flex:0 0 auto; border:1px solid var(--border); border-radius:6px;
+  background:var(--panel); overflow:hidden;}
+.tree-group-head{display:flex; align-items:center; gap:.5em; width:100%; padding:.5em .7em;
+  background:none; border:none; border-bottom:1px solid var(--border); cursor:pointer;
+  text-align:left; font:inherit; color:inherit;}
+.tree-group.collapsed .tree-group-head{border-bottom:none;}
+.tree-group-head:hover{background:var(--panel-2);}
+.tree-group-head .type-pill{margin-bottom:0;}
+.tree-caret{color:var(--muted); font-size:10px; width:1em; flex:0 0 auto;}
+.tree-group-count{margin-left:auto; color:var(--muted); font-size:12px;}
+.tree-children{display:flex; flex-direction:column;}
+.tree-row{display:flex; align-items:center; gap:.5em; padding:.35em .7em; cursor:pointer;
+  border-bottom:1px solid var(--border-soft); min-width:0;}
+.tree-row:last-child{border-bottom:none;}
+.tree-row:hover{background:var(--panel-2);}
+.tree-row:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
+.tree-row.archived .tree-name{color:var(--muted); text-decoration:line-through;}
+.tree-row.picked{background:var(--panel-2); box-shadow:inset 2px 0 0 var(--accent);}
+.tree-name{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.tree-note{color:var(--muted-2); font-size:11px; white-space:nowrap;}
+.tree-degree{flex:0 0 auto; min-width:1.6em; text-align:center; color:var(--muted);
+  font-size:11px; border:1px solid var(--border); border-radius:10px; padding:0 .35em;}
+
+.entity-graph-pane{display:flex; flex-direction:column; border:1px solid var(--border);
+  border-radius:6px; background:var(--panel); min-width:0;
+  height:var(--pane-h); min-height:260px;}
+.graph-toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:.7em; padding:.5em .8em;
+  border-bottom:1px solid var(--border);}
+.graph-title{font-family:var(--font-display); color:var(--text-bright);}
+.graph-summary{color:var(--muted); font-size:12px; flex:1 1 auto;}
+.graph-canvas-wrap{position:relative; flex:1 1 auto; min-height:0; min-width:0;}
+#entity-graph-canvas{display:block; width:100%; height:100%;}
+.graph-tip{position:absolute; z-index:5; pointer-events:none; max-width:20em;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:4px;
+  padding:.3em .5em; font-size:12px; color:var(--text);}
+.graph-legend{display:flex; align-items:center; gap:.5em; padding:.45em .8em;
+  border-top:1px solid var(--border); color:var(--muted); font-size:11px; flex-wrap:wrap;}
+.graph-legend-label{white-space:nowrap;}
+/* The hint takes the slack on a wide pane and its own line on a narrow one,
+   rather than crowding the colour scale. */
+.graph-drag-hint{margin-right:auto; opacity:.8; white-space:normal;}
+@media (max-width: 1100px){ .graph-drag-hint{flex-basis:100%; margin-right:0;} }
+#entity-graph-canvas{cursor:default; touch-action:none;}   /* a drag must not scroll the page */
+.graph-scale{display:flex; align-items:center; gap:.4em; flex:0 0 auto;}
+.graph-scale-dot{display:inline-block; border-radius:50%;}
+.card-title{font-family:var(--font-display); color:var(--text-bright); font-weight:600; margin-bottom:.25em;}
+.card-meta{color:var(--muted); font-size:12px;}
+.type-pill{display:inline-block; text-transform:uppercase; font-size:10px; letter-spacing:.04em; padding:.15em .5em; border-radius:3px; border:1px solid var(--border); color:var(--muted); margin-bottom:.4em;}
+.type-person{color:var(--accent);} .type-organization{color:var(--teal);} .type-location{color:var(--amber);}
+.type-event{color:var(--event);} .type-source{color:var(--source);} .type-communication{color:var(--muted);}
+.type-record{color:var(--record);}
+.type-vehicle{color:var(--vehicle);}
+.status-pill{display:inline-block; font-size:10px; text-transform:uppercase; padding:.15em .5em; border-radius:3px; border:1px solid var(--border);}
+.status-draft{color:var(--amber);} .status-confirmed{color:var(--accent);}
+.geocode-status{font-size:12px; margin:.4em 0 .8em; padding:.4em .6em; border-radius:4px; border:1px solid var(--border);}
+.geocode-pending{color:var(--amber); border-color:var(--amber);}
+.geocode-failed{color:var(--red); border-color:var(--red);}
+.geocode-status .btn-link{margin-left:.5em;}
+
+/* ---------- Detail panels ---------- */
+.back-link{margin-bottom:1em; display:inline-block;}
+.detail-panel{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:1.4em;}
+/* The export menu is positioned against the header, so the header is the
+   containing block for it. */
+.detail-header{display:flex; justify-content:space-between; align-items:flex-start; gap:1em; margin-bottom:1em; position:relative;}
+/* The title block takes the slack; the buttons keep their natural width.
+   Without min-width:0 on the text side, a long description pushed the action
+   row narrow enough to wrap — which it started doing as soon as Export was
+   added as a third button. */
+.detail-header > :first-child{min-width:0; flex:1 1 auto;}
+.detail-actions{display:flex; gap:.5em; flex-wrap:wrap; flex:0 0 auto;}
+@media (max-width: 560px){
+  .detail-header{flex-direction:column; gap:.6em;}
+  .detail-actions{flex:1 1 auto; width:100%;}
+}
+
+/* ---------- Model activity (admin) ---------- */
+.usage-tiles{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  gap:.7em; margin-bottom:1.2em;}
+.usage-tile{background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:.7em .8em;}
+.usage-tile-label{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);}
+.usage-tile-value{font-size:19px; color:var(--text-bright); margin:.15em 0 .1em; line-height:1.2;}
+.usage-tile-note{font-size:11px; color:var(--muted); line-height:1.35;}
+.usage-ok{color:var(--accent);}
+.usage-warn{color:var(--amber);}
+.usage-bad{color:var(--red);}
+
+.usage-block{margin-bottom:1.4em;}
+/* A table of numbers cannot wrap, so on a narrow screen it scrolls inside its
+   own block rather than pushing the page sideways. */
+.usage-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+.usage-table{width:100%; border-collapse:collapse; font-size:12.5px; min-width:26em;}
+.usage-table th{text-align:left; font-weight:600; color:var(--muted); font-size:10.5px;
+  text-transform:uppercase; letter-spacing:.04em; padding:.35em .6em .35em 0;
+  border-bottom:1px solid var(--border);}
+.usage-table td{padding:.4em .6em .4em 0; border-bottom:1px solid var(--border-soft);}
+.usage-table td:not(:first-child){font-family:var(--font-mono);}
+
+/* Deliberately a bar row and not a charting library: it is a shape to glance
+   at, and pulling in a chart dependency for it would be the only one in the
+   app. */
+.usage-spark{display:flex; align-items:flex-end; gap:2px; height:56px;
+  padding:.4em .5em; background:var(--panel-2); border:1px solid var(--border);
+  border-radius:var(--radius);}
+.usage-spark-col{position:relative; flex:1 1 0; height:100%; display:flex;
+  align-items:flex-end; min-width:3px;}
+/* A day with no calls still draws a hairline at the baseline. Height 0 left
+   the row looking like a chart that had failed to render rather than a week
+   with nothing in it. */
+.usage-spark-bar{width:100%; background:var(--accent-dim); border-radius:1px; min-height:2px;}
+.usage-spark-col::after{content:""; position:absolute; left:0; bottom:0; width:100%;
+  height:1px; background:var(--border-strong);}
+.usage-spark-bad{position:absolute; left:0; bottom:0; width:100%; background:var(--red);
+  border-radius:1px; min-height:1px;}
+
+.usage-failures{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.6em;}
+.usage-failures li{border-left:2px solid var(--red); padding-left:.7em;}
+.usage-failure-what{display:block; font-size:12.5px; color:var(--text-bright);}
+.usage-failure-error{font-size:11px; color:var(--muted); margin-top:.2em; line-height:1.45;
+  word-break:break-word;}
+
+/* ---------- Branding form (admin) ---------- */
+.branding-form{max-width:520px;}
+.branding-accent-row{display:flex; align-items:center; gap:.5em;}
+.branding-accent-row input[type="color"]{width:38px; height:32px; padding:2px; cursor:pointer;}
+.branding-accent-row input[type="text"]{width:9em;}
+.branding-warning{margin:.4em 0 .8em; padding:.6em .8em; font-size:12px; line-height:1.5;
+  color:var(--text); background:var(--panel-2);
+  border:1px solid var(--amber); border-left-width:3px; border-radius:var(--radius);}
+.branding-form .form-actions{display:flex; align-items:center; gap:.8em; margin-top:.8em;}
+
+/* ---------- Export menu ---------- */
+.export-menu{position:absolute; right:0; top:100%; z-index:30; min-width:270px; max-width:min(320px, 90vw);
+  background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
+  box-shadow:0 8px 20px var(--shadow); padding:.35em; display:flex; flex-direction:column; gap:.15em;}
+.export-menu-item{display:flex; flex-direction:column; gap:.15em; text-align:left; width:100%;
+  background:none; border:0; border-radius:6px; padding:.55em .7em; cursor:pointer; color:inherit; font:inherit;}
+.export-menu-item:hover, .export-menu-item:focus-visible{background:var(--panel); outline:none;}
+.export-menu-item:focus-visible{box-shadow:0 0 0 2px var(--accent);}
+.export-menu-label{font-size:13px; color:var(--text-bright); font-weight:600;}
+.export-menu-note{font-size:11px; color:var(--muted); line-height:1.35;}
+.export-menu-sep{height:1px; background:var(--border-soft); margin:.3em .2em;}
+.section-title{color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:.05em; margin:1.4em 0 .6em; border-bottom:1px solid var(--border-soft); padding-bottom:.3em;}
+/* A fixed label column and a `1fr` value column both refuse to shrink below
+   their content: `1fr` is `minmax(auto, 1fr)`, and `auto` here means the
+   longest word. An alias with no spaces in it was enough to push the panel
+   wider than a phone. minmax(0, …) on both sides lets the row give way, and
+   the wrap rule near the top of this file breaks the word instead. */
+.field-row{display:grid; grid-template-columns:minmax(0,140px) minmax(0,1fr);
+  gap:.5em; margin-bottom:.5em; font-size:13px; overflow-wrap:anywhere;}
+.field-row .k{color:var(--muted);}
+/* Below this, 140px of label against a value is no longer a sensible split. */
+@media (max-width: 560px){
+  .field-row{grid-template-columns:minmax(0,1fr); gap:.1em; margin-bottom:.7em;}
+}
+
+/* A column, so the canvas takes whatever is left after the hint under it
+   rather than the two of them overflowing a fixed box. */
+#entity-graph{height:clamp(240px, 34vh, 420px); background:var(--panel-2);
+  border:1px solid var(--border); border-radius:6px;
+  display:flex; flex-direction:column;}
+
+.rel-list,.report-chip-list,.attachment-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.4em;}
+.attachment-row{display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--border-soft); border-radius:4px; padding:.5em .7em; font-size:13px; gap:.6em;}
+/* A relationship row is now a column: the summary line, optional notes, and
+   an editor that unfolds underneath it. The line itself keeps the old
+   left/right layout. */
+.rel-row{display:flex; flex-direction:column; background:var(--panel-2);
+  border:1px solid var(--border-soft); border-radius:4px; padding:.5em .7em;
+  font-size:13px; gap:.4em;}
+.rel-line{display:flex; justify-content:space-between; align-items:center; gap:.6em;
+  flex-wrap:wrap;}
+.rel-row-actions{display:flex; gap:.6em; flex:0 0 auto;}
+.rel-notes{color:var(--muted); font-size:12px; white-space:pre-wrap;}
+.rel-edit{display:flex; flex-direction:column; gap:.5em; padding-top:.5em;
+  border-top:1px dashed var(--border);}
+.rel-edit-grid{display:grid; gap:.5em; grid-template-columns:repeat(auto-fit, minmax(9em, 1fr));}
+.rel-edit label,.rel-edit-notes{display:flex; flex-direction:column; gap:.2em;
+  color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.03em;}
+.rel-edit input,.rel-edit select,.rel-edit textarea{font-size:13px; text-transform:none;
+  letter-spacing:normal; color:var(--text);}
+.rel-edit-actions{display:flex; gap:.5em;}
+
+/* ---------- Attachment rows: thumbnail + name + actions ---------- */
+.attachment-thumb-btn{background:none; border:none; padding:0; display:flex; flex:0 0 auto;}
+.attachment-thumb{
+  width:44px; height:44px; flex:0 0 44px; border-radius:4px; object-fit:cover;
+  border:1px solid var(--border); background:var(--panel); display:block;
+}
+.attachment-thumb-icon{
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; letter-spacing:.03em; color:var(--muted);
+}
+.attachment-thumb-btn:hover .attachment-thumb{border-color:var(--accent-dim);}
+.attachment-main{display:flex; flex-direction:column; gap:.15em; flex:1; min-width:0;}
+.attachment-name{color:var(--accent); text-align:left; overflow-wrap:anywhere;}
+.link-like{background:none; border:none; padding:0; font-family:var(--font-ui); font-size:13px; cursor:pointer;}
+.link-like:hover{color:var(--text-bright); text-decoration:underline;}
+.attachment-row-actions{display:flex; align-items:center; gap:.7em; flex:0 0 auto;}
+
+/* ---------- Attachment preview lightbox ----------
+   z-index above the modal backdrop (5000): an entity's edit form can be open
+   underneath when a preview is opened from it. */
+.preview-backdrop{
+  position:fixed; inset:0; z-index:6000; background:var(--scrim-strong);
+  display:flex; align-items:center; justify-content:center; padding:3vh 2vw;
+}
+.preview-box{
+  display:flex; flex-direction:column; width:100%; max-width:1100px; max-height:94vh;
+  background:var(--panel); border:1px solid var(--border); border-radius:8px; overflow:hidden;
+}
+.preview-header{
+  display:flex; align-items:center; justify-content:space-between; gap:1em;
+  padding:.7em 1em; border-bottom:1px solid var(--border); background:var(--panel-2);
+}
+.preview-title{color:var(--text-bright); font-size:13px; overflow-wrap:anywhere;}
+.preview-actions{display:flex; align-items:center; gap:.8em; flex:0 0 auto;}
+.preview-close{font-size:20px; line-height:1;}
+/* min-height so a very small image (an icon, a thumbnail someone attached)
+   doesn't collapse the box into a sliver that reads as a broken dialog. */
+.preview-body{
+  flex:1; min-height:220px; overflow:auto; display:flex; align-items:center; justify-content:center;
+  padding:1em; background:var(--bg);
+}
+.preview-image{max-width:100%; max-height:82vh; object-fit:contain; display:block;}
+/* A PDF viewer needs real height to be usable at all, so unlike the image it
+   fills the box rather than sizing to its content. */
+.preview-pdf{width:100%; height:82vh; border:none; background:#fff;}
+
+@media (max-width: 600px){
+  .preview-backdrop{padding:0;}
+  .preview-box{max-width:100%; max-height:100vh; border-radius:0; border:none;}
+  .preview-pdf{height:75vh;}
+}
+.rel-row .rel-main{flex:1;}
+.rel-arrow{color:var(--muted-2);}
+.confidence-confirmed{color:var(--accent);} .confidence-probable{color:var(--amber);} .confidence-possible{color:var(--muted);}
+
+/* ---------- Admin: user management + RSS feeds ---------- */
+.admin-user-row{display:flex; justify-content:space-between; align-items:center; gap:1em; cursor:default;}
+.admin-user-row:hover{border-color:var(--border);}
+.admin-user-main{flex:1; min-width:0;}
+.admin-user-controls{display:flex; align-items:center; gap:.6em; flex-shrink:0;}
+.rel-discovery-date{color:var(--muted); font-size:11px; margin-left:.4em;}
+.rss-feed-url{font-family:monospace; font-size:12px; word-break:break-all;}
+.rss-feed-error{color:var(--red);}
+
+.chip{display:inline-flex; align-items:center; gap:.4em; background:var(--panel-2); border:1px solid var(--border); border-radius:14px; padding:.2em .7em; font-size:12px;}
+.chip button{background:none; border:none; color:var(--muted); padding:0; font-size:13px;}
+.chip-row{display:flex; flex-wrap:wrap; gap:.4em; margin-bottom:.5em;}
+
+.markdown-body{line-height:1.6;}
+.markdown-body p{margin:.6em 0;}
+.markdown-body code{background:var(--panel-2); padding:.1em .3em; border-radius:var(--radius);}
+
+/* ---------- Forms / modal ---------- */
+/* z-index must clear Leaflet's own panes/controls (map/marker/popup panes
+   and the zoom control go up to z-index:1000 in leaflet.css), or opening the
+   entity-creation modal from a map click leaves it painted underneath the
+   map instead of on top of it. */
+.modal-backdrop{position:fixed; inset:0; background:var(--scrim); display:flex; align-items:flex-start; justify-content:center; padding:4vh 1em; overflow-y:auto; z-index:5000;}
+.modal-box{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:1.4em; width:100%; max-width:560px;}
+.modal-box h2{margin-bottom:1em; font-size:16px;}
+.form-row{display:flex; flex-direction:column; gap:.3em; margin-bottom:.9em;}
+.form-row label{color:var(--muted); font-size:12px;}
+.form-row input,.form-row select,.form-row textarea{width:100%;}
+.form-row input[type="checkbox"]{width:auto; align-self:flex-start;}
+.form-row > .btn-link{align-self:flex-start; text-align:left;}
+/* A file input carries a wide intrinsic size — the browser sizes it around the
+   "No file chosen" text — so an inline row holding one overflowed a phone
+   before it wrapped. Wrapping plus min-width:0 lets it stack instead. */
+.form-row-inline{display:flex; gap:.8em; flex-wrap:wrap;}
+.form-row-inline .form-row{flex:1 1 12em; min-width:0;}
+.form-row-inline input[type="file"]{max-width:100%;}
+.modal-actions{display:flex; justify-content:flex-end; gap:.6em; margin-top:1.2em;}
+.form-error{color:var(--red); font-size:13px; min-height:1.2em;}
+
+/* ---------- Bulk CSV import ---------- */
+#import-results{margin-top:1em; max-height:40vh; overflow-y:auto;}
+.import-error-row{display:flex; flex-wrap:wrap; align-items:baseline; gap:.5em; background:var(--panel-2); border:1px solid var(--border-soft); border-radius:4px; padding:.4em .6em; font-size:12px; margin-bottom:.4em;}
+.import-row-num{color:var(--muted); flex-shrink:0;}
+.import-row-error{color:var(--red); flex-basis:100%;}
+
+.entity-picker{position:relative;}
+.entity-picker-results{position:absolute; top:100%; left:0; right:0; z-index:20; max-height:220px; overflow-y:auto; background:var(--panel); border:1px solid var(--border); border-top:none; border-radius:0 0 4px 4px;}
+.entity-picker-item{padding:.5em .6em; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border-soft);}
+.entity-picker-item:last-child{border-bottom:none;}
+.entity-picker-item:hover{background:var(--panel-2);}
+
+/* ---------- Review queue cards ---------- */
+.stack{display:flex; flex-direction:column; gap:.8em;}
+.queue-card{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:1em;}
+.queue-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:.6em;}
+.queue-score{color:var(--accent); font-weight:600;}
+.queue-detail-list{list-style:none; margin:.4em 0; padding:0; color:var(--muted); font-size:12px;}
+.queue-actions{display:flex; gap:.5em; margin-top:.6em;}
+.empty-state{color:var(--muted); text-align:center; padding:3em 1em;}
+
+/* ---------- Suggestions that already know which records they mean ----------
+   Signal- and assistant-derived suggestions carry both entity ids, so the card
+   is a decision rather than a form. Wraps at narrow widths: the head line is
+   two names and a pill, which is wider than it looks on a phone. */
+.queue-card-head > span:first-child{display:flex; flex-wrap:wrap; align-items:center; gap:.4em; min-width:0;}
+.queue-card.resolved .entity-link{color:var(--text-bright); text-decoration:none; border-bottom:1px dotted var(--border-strong);}
+.queue-card.resolved .entity-link:hover{color:var(--accent); border-bottom-color:var(--accent);}
+.rel-arrow{color:var(--muted); }
+.resolved-actions{flex-wrap:wrap; align-items:center;}
+.inline-label{color:var(--muted); font-size:12px;}
+.rel-type-select{font-family:var(--font-mono); font-size:12px; padding:.3em .4em;}
+
+.source-pill{display:inline-block; text-transform:uppercase; font-size:10px; letter-spacing:.04em;
+  padding:.15em .5em; border-radius:3px; border:1px solid var(--border-strong); color:var(--muted-2); white-space:nowrap;}
+.source-signal{border-color:var(--accent-dim); color:var(--accent);}
+.source-assistant{border-color:var(--border-strong);}
+
+.evidence{border-left:2px solid var(--border-strong); padding-left:.8em; margin:.2em 0 .4em;}
+.evidence-headline{color:var(--text); font-size:13px;}
+.signal-chips{display:flex; flex-wrap:wrap; gap:.35em; margin-top:.4em;}
+.signal-chip{font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted-2);
+  border:1px solid var(--border); border-radius:3px; padding:.1em .45em;}
+.evidence-detail{margin-top:.5em;}
+.evidence-detail > summary{cursor:pointer; color:var(--muted-2); font-size:12px;}
+.evidence-detail ul{list-style:none; margin:.4em 0 0; padding:0; color:var(--muted); font-size:12px;}
+.evidence-detail li{margin:.25em 0;}
+.evidence-detail code{font-family:var(--font-mono);}
+
+/* A proposal whose "name" is really a contact detail. Not an error — the
+   suggestion is still there to accept or dismiss — but it should not be
+   accepted by someone working quickly down a queue without noticing. */
+.suggestion-warning{border-left:2px solid var(--red); padding:.4em 0 .4em .8em;
+  margin:.5em 0; color:var(--muted); font-size:12px; line-height:1.5;}
+
+/* ---------- Merging duplicates ---------- */
+.merge-bar{display:flex; flex-wrap:wrap; align-items:center; gap:.8em; margin-bottom:.9em;
+  padding:.7em 1em; background:var(--panel); border:1px solid var(--accent-dim); border-radius:6px;}
+.merge-bar #entity-merge-count{color:var(--text-bright); font-weight:600; white-space:nowrap;}
+.merge-bar .view-hint{margin:0; flex:1 1 16em;}
+
+/* A tree row is a flex line, so the tick box is just the first item on it --
+   no float, which would drop it out of the row's flow entirely. */
+.entity-pick{flex:0 0 auto; margin:0;}
+
+.merge-options{display:flex; flex-direction:column; gap:.5em; margin:1em 0;}
+.merge-option{display:flex; align-items:flex-start; gap:.7em; padding:.7em .9em; cursor:pointer;
+  background:var(--panel); border:1px solid var(--border); border-radius:6px;}
+.merge-option.chosen{border-color:var(--accent);}
+/* A record that is about to be recast as another kind. Dimmed rather than
+   hidden: it is still being merged, and seeing which records lose their own
+   fields is the point of showing the list at all. */
+.merge-option.recast{opacity:.72; border-style:dashed;}
+.merge-option.recast .merge-option-role{color:var(--amber);}
+.merge-option input[type=radio]:disabled{cursor:not-allowed;}
+
+.merge-typecast{border:1px solid var(--border-strong); border-radius:6px;
+  padding:.7em .9em; margin:1em 0; background:var(--panel);}
+.merge-typecast .inline-check{align-items:flex-start; line-height:1.45;}
+.merge-typecast .inline-check input{margin-top:.2em; flex:0 0 auto;}
+.merge-typecast .field-hint{margin:.35em 0 0 1.7em;}
+.merge-typepick{display:flex; flex-wrap:wrap; align-items:center; gap:.6em;
+  margin:.8em 0 .1em; padding-top:.7em; border-top:1px dashed var(--border);}
+.merge-typepick-label{color:var(--muted); font-size:11px; text-transform:uppercase;
+  letter-spacing:.04em;}
+.merge-type-option{display:flex; align-items:center; gap:.4em; cursor:pointer;
+  padding:.35em .6em; border:1px solid var(--border); border-radius:4px;
+  background:var(--panel-2);}
+.merge-type-option.chosen{border-color:var(--accent);}
+.merge-type-option .type-pill{margin-bottom:0;}
+.merge-option-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:.2em;}
+.merge-option-meta{color:var(--muted); font-size:12px;}
+.merge-option-role{color:var(--muted-2); font-size:10px; text-transform:uppercase;
+  letter-spacing:.04em; white-space:nowrap;}
+.merge-option.chosen .merge-option-role{color:var(--accent);}
+
+.merge-preview{background:var(--panel); border-left:2px solid var(--border-strong);
+  padding:.6em 0 .6em .9em; margin:1em 0; color:var(--muted); font-size:12px;}
+.merge-preview-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.25em;}
+.merge-preview-list strong{color:var(--text-bright);}
+.merge-warn{color:var(--red);}
+
+/* ---------- One end of a document-extracted relationship ----------
+   Three states in the same slot: matched to a record, several to choose from,
+   or missing and about to be created. Each is one line at rest so a card with
+   both ends already settled reads as a decision rather than a form. */
+.endpoint{border-left:2px solid var(--border-strong); padding:.5em 0 .5em .8em; margin:.5em 0;}
+.endpoint-head{display:flex; flex-wrap:wrap; align-items:center; gap:.5em;}
+.endpoint-name{color:var(--text-bright); font-weight:600;}
+.endpoint-matched{color:var(--accent); font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+  display:inline-flex; align-items:center; gap:.35em;}
+.endpoint-ambiguous{color:var(--muted-2); font-size:11px; text-transform:uppercase; letter-spacing:.04em;}
+.endpoint-missing{color:var(--muted-2); font-size:11px; text-transform:uppercase; letter-spacing:.04em;}
+.endpoint-toggle{font-size:11px; padding:0;}
+.endpoint-choices{display:flex; flex-direction:column; gap:.25em; margin-top:.4em;}
+.endpoint-choice{display:flex; align-items:center; gap:.4em; font-size:12px; color:var(--text);}
+.endpoint-create{display:flex; flex-wrap:wrap; align-items:center; gap:.5em; margin-top:.4em;}
+.endpoint-create-note{color:var(--muted); font-size:11px;}
+.endpoint-picker{margin-top:.5em;}
+.endpoint-picker .form-row{margin:0;}
+.doc-endpoints{margin-top:.4em;}
+
+/* ---------- Documents: the inbox ----------
+   Intake is two boxes side by side because the two ways a document arrives —
+   as a file, or as text someone read out to you — are equally normal here.
+   They stack below 760px rather than shrinking into two unusable columns. */
+.doc-intake{display:grid; grid-template-columns:1fr 1fr; gap:1em; margin-bottom:1em;}
+@media (max-width:760px){ .doc-intake{grid-template-columns:1fr;} }
+
+.drop-zone{border:2px dashed var(--border-strong); border-radius:8px; background:var(--panel);
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:1.6em 1em; cursor:pointer; transition:border-color .12s, background .12s;}
+.drop-zone:hover, .drop-zone:focus-visible{border-color:var(--accent); outline:none;}
+.drop-zone.drag-over{border-color:var(--accent); background:var(--panel-2, var(--panel));}
+.drop-zone-inner{display:flex; flex-direction:column; gap:.4em;}
+.drop-zone-inner strong{color:var(--text-bright);}
+
+.paste-zone{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:.9em 1em;
+  display:flex; flex-direction:column; gap:.5em;}
+.paste-zone label{color:var(--muted-2); font-size:12px;}
+.paste-zone textarea{width:100%; resize:vertical; font-family:var(--font-mono); font-size:12px;}
+.paste-row{display:flex; gap:.5em; flex-wrap:wrap;}
+.paste-row input{flex:1 1 10em; min-width:0;}
+
+.intake-status{margin-bottom:.8em; font-size:12px; color:var(--muted);}
+.intake-status.ok{color:var(--text);}
+.intake-status.warn{color:var(--red);}
+
+.doc-card .doc-head-left{display:flex; flex-wrap:wrap; align-items:center; gap:.5em; min-width:0;}
+.doc-open{color:var(--text-bright); text-decoration:none;}
+.doc-open:hover{color:var(--accent);}
+.doc-sub{display:flex; flex-wrap:wrap; gap:.9em; color:var(--muted); font-size:12px; margin-top:.2em;}
+.doc-source{font-style:italic;}
+.doc-meta{display:flex; gap:.6em; font-size:12px; white-space:nowrap;}
+.doc-pending{color:var(--accent); font-weight:600;}
+.doc-reviewed, .doc-none{color:var(--muted);}
+.doc-error{color:var(--red); font-size:12px; margin-top:.5em; display:flex; flex-wrap:wrap;
+  gap:.6em; align-items:center;}
+
+.doc-status{font-size:10px; text-transform:uppercase; letter-spacing:.04em; padding:.15em .5em;
+  border-radius:3px; border:1px solid var(--border-strong); color:var(--muted-2); white-space:nowrap;}
+.doc-status-done{border-color:var(--accent-dim); color:var(--accent);}
+.doc-status-failed{border-color:var(--red); color:var(--red);}
+
+/* Detail: text on the left, what came out of it on the right. One column below
+   1000px — side-by-side panes narrower than that are two cramped columns
+   rather than a comparison. */
+.doc-detail-head{display:flex; flex-wrap:wrap; gap:1em; justify-content:space-between;
+  align-items:flex-start; margin-bottom:.6em;}
+.doc-detail-head h2{margin:0 0 .2em;}
+.doc-detail-actions{display:flex; flex-wrap:wrap; gap:.5em;}
+.doc-source-note{color:var(--muted); font-size:12px; margin:.2em 0 1em;}
+.file-under-panel{background:var(--panel); border:1px solid var(--border); border-radius:6px;
+  padding:1em; margin-bottom:1em;}
+
+.doc-split{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.2em; align-items:start;}
+@media (max-width:1000px){ .doc-split{grid-template-columns:1fr;} }
+.doc-split h3{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted-2);
+  margin:0 0 .6em;}
+.doc-text{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:1em;
+  font-family:var(--font-mono); font-size:12px; line-height:1.55; white-space:pre-wrap;
+  word-break:break-word; max-height:70vh; overflow:auto; margin:0;}
+.doc-text mark{background:var(--accent); color:var(--bg); padding:0 .1em;}
+.doc-suggestions-pane{display:flex; flex-direction:column; gap:.6em;}
+.doc-suggestion{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.8em 1em;}
+.doc-suggestion.resolved-suggestion{opacity:.65;}
+.doc-suggestion-head{display:flex; justify-content:space-between; align-items:center; gap:.6em;
+  flex-wrap:wrap;}
+.doc-needs-review{border-top:1px solid var(--border); margin-top:.4em; padding-top:.8em;
+  display:flex; flex-direction:column; gap:.6em;}
+.doc-resolved > summary{cursor:pointer; color:var(--muted-2); font-size:12px; margin-top:.4em;}
+.doc-resolved[open] > summary{margin-bottom:.6em;}
+
+/* ---------- "Ask the assistant to propose links" ---------- */
+.propose-box{background:var(--panel); border:1px solid var(--border); border-radius:6px; margin-bottom:.8em;}
+.propose-box > summary{cursor:pointer; padding:.7em 1em; color:var(--text); font-size:13px;}
+.propose-body{padding:0 1em 1em;}
+.propose-row{display:flex; gap:.5em; flex-wrap:wrap; margin-top:.5em;}
+.propose-row input{flex:1 1 18em; min-width:0;}
+.propose-result{margin-top:.6em; font-size:12px; color:var(--muted);}
+.propose-result.ok{color:var(--text);}
+.propose-result.warn{color:var(--red);}
+
+.toast{position:fixed; bottom:1.5em; left:50%; transform:translateX(-50%); background:var(--panel); border:1px solid var(--accent-dim); color:var(--text-bright); padding:.7em 1.2em; border-radius:6px; font-size:13px; z-index:4000;} /* above Leaflet's panes/controls (max z-index:1000) so a toast fired while the Map view is open isn't hidden behind an open popup */
+.toast.error{border-color:var(--red); color:var(--red);}
+
+/* ---------- Dashboard ---------- */
+/* One flowing panel grid rather than two fixed rows: panels can be reordered
+   and hidden, so nothing can assume a particular one is in a particular row.
+   Three tracks on a normal monitor, collapsing to one on a phone; a panel
+   asks for the width it needs with .dash-span-N and never more than the grid
+   has, so hiding the wide one doesn't leave a hole. */
+.dashboard-grid{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1em; margin-bottom:1.2em;
+  align-items:start;}
+.dash-span-1{grid-column:span 1;}
+.dash-span-2{grid-column:span 2;}
+.dash-span-3{grid-column:span 3;}
+.dashboard-grid-lists{grid-template-columns:1fr 1fr;}
+
+.dash-toolbar{display:flex; align-items:center; gap:.9em; margin-bottom:1em; flex-wrap:wrap;}
+.dash-window{display:flex; align-items:center; gap:.5em; font-size:12px; color:var(--muted);}
+.dash-toolbar .btn-secondary{margin-left:auto;}
+.dash-layout-note{color:var(--amber);}
+
+.dash-customise{background:var(--panel); border:1px solid var(--border); border-radius:8px;
+  padding:1em; margin-bottom:1em; max-width:420px;}
+.dash-customise-list{list-style:none; margin:.6em 0; padding:0; display:flex; flex-direction:column; gap:.2em;}
+.dash-customise-row{display:flex; align-items:center; justify-content:space-between; gap:.6em;
+  font-size:13px; padding:.25em .35em; border-radius:4px;}
+.dash-customise-row:hover{background:var(--panel-2);}
+.dash-customise-row label{display:flex; align-items:center; gap:.5em; cursor:pointer;}
+.dash-customise-move{display:flex; gap:.4em;}
+.dash-customise-move button[disabled]{opacity:.3; cursor:default;}
+
+/* Dragging a panel by its title. The arrows in the customise drawer do the
+   same job where drag-and-drop is unavailable or unpleasant (touch, keyboard). */
+.dash-panel .dash-card-title[draggable]{cursor:grab;}
+.dash-panel.dragging{opacity:.5;}
+.dash-panel.drop-target{outline:2px dashed var(--accent-dim); outline-offset:2px;}
+
+/* ---------- Needs attention ---------- */
+.attention-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1em;}
+.attention-title{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+  margin-bottom:.45em; display:flex; align-items:center; gap:.4em;}
+.attention-count{background:var(--panel-2); border:1px solid var(--border); border-radius:10px;
+  padding:0 .45em; font-size:10.5px; color:var(--text);}
+.attention-block .dash-list{max-height:230px; overflow-y:auto;}
+
+/* ---------- Hotspots ---------- */
+/* Capped and scrollable: seven hotspots with their evidence each would make
+   this panel three times the height of everything beside it and leave the
+   rest of the grid empty. */
+.hotspot-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.7em;
+  max-height:460px; overflow-y:auto;}
+.hotspot{background:var(--panel-2); border:1px solid var(--border-soft); border-radius:6px; padding:.6em .75em;}
+.hotspot-head{display:flex; align-items:center; gap:.7em;}
+.hotspot-head a{flex:0 0 auto; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.hotspot-bar{flex:1; height:6px; background:var(--panel); border:1px solid var(--border); border-radius:3px; overflow:hidden;}
+.hotspot-bar > span{display:block; height:100%; background:var(--accent-dim);}
+.hotspot-count{font-weight:700; color:var(--text-bright); font-size:13px;}
+.hotspot-export{flex:0 0 auto; background:none; border:1px solid var(--border); border-radius:4px;
+  color:var(--muted); font-family:var(--font-ui); font-size:10px; letter-spacing:.04em; padding:.15em .45em;}
+.hotspot-export:hover{border-color:var(--accent-dim); color:var(--text-bright);}
+.hotspot-records{list-style:none; margin:.45em 0 0; padding:0; display:flex; flex-direction:column; gap:.15em;}
+.hotspot-records li{display:flex; align-items:center; gap:.45em; font-size:12px; color:var(--muted);
+  cursor:pointer; padding:.15em .2em; border-radius:3px;}
+.hotspot-records li:hover{background:var(--panel); color:var(--text);}
+.hotspot-more{color:var(--muted-2); font-size:11.5px; cursor:default;}
+.hotspot-more:hover{background:none; color:var(--muted-2);}
+
+/* ---------- Tempo ---------- */
+.tempo-chart{display:flex; align-items:flex-end; gap:3px; height:70px; margin:.3em 0 .6em;
+  padding:.4em; background:var(--panel-2); border:1px solid var(--border-soft); border-radius:4px;}
+.tempo-bar{flex:1; display:flex; align-items:flex-end; height:100%;}
+.tempo-bar > span{display:block; width:100%; background:var(--accent-dim); border-radius:2px 2px 0 0;}
+.tempo-bar:last-child > span{background:var(--accent);}
+.dash-card{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:1.2em;}
+.dash-card-title{color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:.05em; margin-bottom:.7em;}
+.dash-clock-card{text-align:center;}
+.dash-clock{font-size:34px; font-weight:700; color:var(--accent); letter-spacing:.03em;}
+.dash-date{color:var(--text-bright); margin-top:.3em; font-size:13px;}
+.dash-utc{color:var(--muted); margin-top:.4em; font-size:11px;}
+.dash-stats{display:grid; grid-template-columns:1fr 1fr; gap:.8em;}
+.dash-stat{text-align:center;}
+.dash-stat-value{font-size:22px; font-weight:700; color:var(--accent);}
+.dash-stat-value.attention{color:var(--amber);}
+.dash-stat-label{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.03em; margin-top:.2em;}
+.dash-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.4em;}
+.dash-list li{background:var(--panel-2); border:1px solid var(--border-soft); border-radius:4px; padding:.5em .7em; font-size:13px; cursor:pointer;}
+.dash-list li:hover{border-color:var(--accent-dim);}
+.dash-list .dash-list-meta{color:var(--muted); font-size:11px; margin-top:.15em;}
+
+/* ---------- Map ---------- */
+/* Was a flat 560px, which on a laptop left the legend and the toolbar
+   fighting for the fold. */
+#map-container{height:clamp(320px, 60vh, 700px); border:1px solid var(--border);
+  border-radius:8px; background:var(--panel-2);}
+@supports (height:1dvh){ #map-container{height:clamp(320px, 60dvh, 700px);} }
+/* Leaflet ships its own light-mode chrome; these overrides bring the popup
+   and controls in line with the phosphor-green theme rather than clashing
+   with a bright white box in the middle of an otherwise dark app. */
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel); color:var(--text); border:1px solid var(--border);}
+.leaflet-popup-content{font-family:var(--font-ui); font-size:12px; margin:.8em 1em;}
+.leaflet-container{background:var(--panel-2);}
+.leaflet-bar a{background:var(--panel); color:var(--text); border-bottom:1px solid var(--border-soft);}
+.leaflet-bar a:hover{background:var(--panel-2); color:var(--text-bright);}
+.map-popup-title{color:var(--text-bright); font-weight:700; margin-bottom:.3em;}
+.map-popup-address{color:var(--muted); margin-bottom:.5em;}
+.map-popup-rel-list{list-style:none; margin:.3em 0; padding:0; max-height:140px; overflow-y:auto;}
+.map-popup-rel-list li{padding:.2em 0; border-bottom:1px solid var(--border-soft);}
+.map-popup-rel-list a{cursor:pointer;}
+.map-popup-actions{margin-top:.5em;}
+
+@media (max-width: 900px){
+  .dashboard-grid,.dashboard-grid-lists{grid-template-columns:1fr;}
+  .dash-span-1,.dash-span-2,.dash-span-3{grid-column:span 1;}
+}
+
+/* ---------- Ollama model picker / connection status / model pull ---------- */
+.conn-row{display:flex; align-items:center; gap:.9em; flex-wrap:wrap; margin-top:.35em;}
+.conn-status{font-size:12px;}
+.conn-ok{color:var(--accent);}
+.conn-bad{color:var(--amber);}
+.form-row select[data-model-picker]{width:100%;}
+.form-row input[data-model-custom]{margin-top:.4em;}
+
+.warn-banner{
+  border:1px solid var(--amber); border-left-width:3px; border-radius:4px;
+  background:rgba(255,176,32,.07); color:var(--text);
+  padding:.7em .9em; font-size:12.5px; line-height:1.55; margin-bottom:1em;
+}
+
+.pull-box{margin-top:1.4em; padding-top:1.1em; border-top:1px solid var(--border);}
+.pull-box h4{font-size:13px; margin:0 0 .3em;}
+.pull-row{display:flex; gap:.5em; margin:.6em 0 .5em;}
+.pull-row input{flex:1; min-width:0;}
+.pull-suggestions{display:flex; align-items:center; gap:.6em; flex-wrap:wrap; color:var(--muted); font-size:12px;}
+.pull-progress{margin-top:.9em; font-size:12.5px; color:var(--text);}
+.pull-progress.ok .pull-status{color:var(--accent);}
+.pull-progress.error .pull-status{color:var(--red);}
+.pull-bar{height:6px; margin-top:.5em; background:var(--panel-2); border:1px solid var(--border); border-radius:3px; overflow:hidden;}
+.pull-bar > div{height:100%; background:var(--accent-dim); width:0; transition:width .3s linear;}
+/* Ollama reports no byte counts while it's resolving a manifest or verifying,
+   so those phases get a moving bar rather than a stuck 0%. */
+.pull-bar.indeterminate > div{width:35%; animation:pull-slide 1.1s ease-in-out infinite;}
+@keyframes pull-slide{0%{margin-left:-35%;}100%{margin-left:100%;}}
+
+/* ---------- Report editor ---------- */
+.editor-topline{display:flex; align-items:center; justify-content:space-between; margin-bottom:.9em;}
+.editor-layout{display:grid; grid-template-columns:1fr 300px; gap:1.2em; align-items:start;}
+.editor-main{display:flex; flex-direction:column; gap:.8em; min-width:0;}
+.editor-title{font-size:18px; padding:.6em .7em; color:var(--text-bright);}
+.editor-body-wrap{position:relative;}
+.editor-body{width:100%; min-height:420px; resize:vertical; line-height:1.6; padding:.8em;}
+.editor-controls{display:flex; align-items:flex-end; gap:1em; flex-wrap:wrap;}
+.editor-controls label{display:flex; flex-direction:column; gap:.25em; font-size:12px; color:var(--muted);}
+.editor-actions{margin-left:auto; display:flex; align-items:center; gap:.9em;}
+
+/* The mention menu is absolutely positioned over the textarea rather than
+   following the caret: a textarea gives no caret coordinates without
+   mirroring its entire content in a hidden div, and a fixed position under
+   the field is both simpler and steadier to aim at. */
+.mention-menu{
+  position:absolute; left:.6em; right:.6em; bottom:.6em; z-index:40; max-height:260px; overflow-y:auto;
+  background:var(--panel); border:1px solid var(--accent-dim); border-radius:6px;
+  box-shadow:0 -6px 18px var(--shadow);
+}
+.mention-item{display:flex; align-items:center; gap:.5em; padding:.45em .7em; font-size:13px; cursor:pointer;}
+.mention-item:hover,.mention-item.active{background:var(--panel-2);}
+.mention-item.active{border-left:2px solid var(--accent); padding-left:calc(.7em - 2px);}
+.mention-create{color:var(--muted);}
+.mention-create .mention-name{color:var(--text);}
+.mention-plus{color:var(--accent); font-weight:700;}
+.mention-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.mention-hint{padding:.5em .7em; color:var(--muted); font-size:12px;}
+
+.editor-side{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.9em; position:sticky; top:70px;}
+.editor-side-title{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:.4em;}
+.editor-quickadd{position:relative; margin:.7em 0;}
+.editor-quickadd input{width:100%;}
+.editor-entity-results{position:absolute; top:100%; left:0; right:0; z-index:30; max-height:280px; overflow-y:auto;
+  background:var(--panel); border:1px solid var(--border); border-radius:0 0 6px 6px; box-shadow:0 6px 16px var(--shadow-soft);}
+.editor-entity-result{display:flex; align-items:center; gap:.4em; padding:.45em .6em; font-size:12.5px; cursor:pointer;}
+.editor-entity-result:hover{background:var(--panel-2);}
+.editor-entity-sep{padding:.35em .6em; font-size:11px; color:var(--muted); background:var(--panel-2); text-transform:uppercase; letter-spacing:.03em;}
+.editor-entity-create{color:var(--muted);}
+.editor-entity-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.3em; max-height:420px; overflow-y:auto;}
+.editor-entity-row{display:flex; align-items:center; gap:.4em; padding:.35em .4em; border-radius:4px; background:var(--panel-2); font-size:12.5px;}
+.editor-entity-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--accent); text-align:left;}
+.editor-entity-remove{background:none; border:none; color:var(--muted-2); font-size:15px; line-height:1; padding:0 .2em;}
+.editor-entity-remove:hover{color:var(--red);}
+.chip-new{font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; background:var(--accent-dim); color:var(--on-accent); border-radius:3px; padding:.1em .3em; font-weight:700;}
+.chip-mentioned{font-size:11px; color:var(--accent); font-weight:700;}
+
+/* Mentions inside a rendered report */
+.markdown-body a.entity-mention{color:var(--accent); text-decoration:none; border-bottom:1px dotted var(--accent-dim);}
+.markdown-body a.entity-mention:hover{color:var(--text-bright); border-bottom-style:solid;}
+
+@media (max-width: 900px){
+  .editor-layout{grid-template-columns:1fr;}
+  .editor-side{position:static;}
+}
+
+/* ---------- Person status badges ---------- */
+/* Only the states worth interrupting a scan for get a badge: Living and
+   At liberty are the unremarkable cases and render nothing at all, so a list
+   of forty people shows the two that need attention rather than forty pills. */
+.status-badge{font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700;
+  border-radius:3px; padding:.15em .4em; border:1px solid currentColor;}
+.status-deceased{color:var(--muted); border-color:var(--border);}
+.status-unknown{color:var(--muted-2);}
+.status-captured{color:var(--red);}
+.status-detained{color:var(--amber);}
+.status-evading{color:var(--amber);}
+.status-missing{color:var(--teal);}
+
+/* An Event past its relevant-until date. Nothing is hidden or archived — see
+   db/init.sql — so this badge is the entire consequence, plus the optional
+   list filter. */
+.status-expired{color:var(--muted); border-color:var(--border);}
+
+/* ---------- Report criticality (message precedence) ---------- */
+/* Colour is doing real work here: Flash has to be findable at a glance in a
+   list of forty reports, and Routine has to not compete for attention. Unset
+   renders nothing at all rather than a neutral pill, so "nobody rated this"
+   never looks like a rating. */
+.crit-badge{display:inline-block; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
+  font-weight:700; border-radius:3px; padding:.15em .45em; margin-left:.35em; border:1px solid currentColor;}
+.crit-flash{color:var(--on-danger); background:var(--red); border-color:var(--red);}
+.crit-immediate{color:var(--red);}
+.crit-priority{color:var(--amber);}
+.crit-routine{color:var(--muted);}
+
+/* ---------- Contact points ---------- */
+.contact-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.35em;}
+.contact-row{display:flex; align-items:flex-start; gap:.6em; justify-content:space-between;
+  padding:.45em .6em; border-radius:4px; background:var(--panel-2); font-size:13px;}
+.contact-main{display:flex; flex-wrap:wrap; align-items:baseline; gap:.5em; min-width:0;}
+.contact-kind{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+  min-width:62px;}
+.contact-label{color:var(--muted-2); font-size:11.5px;}
+.contact-value{color:var(--text-bright); word-break:break-word;}
+.contact-note{color:var(--muted); font-size:11.5px; flex-basis:100%;}
+.contact-actions{display:flex; gap:.6em; flex:0 0 auto;}
+.chip-preferred{font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; font-weight:700;
+  background:var(--accent-dim); color:var(--on-accent); border-radius:3px; padding:.1em .3em;}
+
+/* ---------- Guided debrief ---------- */
+.wizard-steps{list-style:none; display:flex; flex-wrap:wrap; gap:.4em; margin:0 0 1.2em; padding:0; font-size:12px;}
+.wizard-steps li{display:flex; align-items:center; gap:.45em; padding:.4em .8em; border:1px solid var(--border);
+  border-radius:4px; color:var(--muted-2); background:var(--panel-2);}
+.wizard-steps li.done{color:var(--muted); cursor:pointer;}
+.wizard-steps li.done:hover{border-color:var(--accent-dim); color:var(--text);}
+.wizard-steps li.active{color:var(--text-bright); border-color:var(--accent); background:var(--panel);}
+.wizard-num{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
+  border-radius:50%; border:1px solid currentColor; font-size:10px;}
+.wizard-steps li.active .wizard-num{background:var(--accent-dim); color:var(--on-accent); border-color:var(--accent);}
+
+.wizard-panel{display:flex; flex-direction:column; gap:.8em;}
+.wizard-title{font-size:16px; margin:0;}
+.wizard-label{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);}
+.field-hint-inline{text-transform:none; letter-spacing:0; color:var(--muted-2);}
+.wizard-fields{display:flex; gap:1em; flex-wrap:wrap;}
+.wizard-fields label{display:flex; flex-direction:column; gap:.25em; font-size:12px; color:var(--muted);}
+.checkbox-row{display:flex; align-items:center; gap:.5em; font-size:12.5px; color:var(--muted);}
+.checkbox-row input{width:auto;}
+
+.wizard-narrative{display:grid; grid-template-columns:1fr 240px; gap:1em; align-items:start;}
+.wizard-narrative .editor-body{min-height:360px;}
+.editor-body-short{min-height:180px;}
+.wizard-prompts{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.8em;}
+.wizard-prompt-list{list-style:none; margin:.6em 0 0; padding:0; display:flex; flex-direction:column; gap:.35em;}
+.wizard-prompt-list button{text-align:left; font-size:12.5px; line-height:1.35;}
+
+.wizard-nav{display:flex; align-items:center; gap:.9em; padding-top:.4em; border-top:1px solid var(--border-soft);}
+.wizard-nav .btn-primary{margin-left:auto;}
+.wizard-nav .card-meta{margin-left:auto;}
+.wizard-nav .card-meta + .btn-primary{margin-left:0;}
+
+.wizard-review{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.9em;}
+.wizard-review-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:.5em;}
+.wizard-review-table th{text-align:left; font-weight:500; color:var(--muted); padding:.25em .8em .25em 0;
+  white-space:nowrap; vertical-align:top; width:1%;}
+.wizard-review-table td{padding:.25em 0; color:var(--text);}
+
+/* ---------- Entity picker (used throughout the debrief) ---------- */
+.entity-picker{display:flex; flex-direction:column; gap:.5em;}
+.picker-search{position:relative;}
+.picker-input{width:100%;}
+.picker-results{position:absolute; top:100%; left:0; right:0; z-index:30; max-height:280px; overflow-y:auto;
+  background:var(--panel); border:1px solid var(--border); border-radius:0 0 6px 6px; box-shadow:0 6px 16px var(--shadow-soft);}
+.picker-result{display:flex; align-items:center; gap:.4em; padding:.45em .6em; font-size:12.5px; cursor:pointer;}
+.picker-result:hover{background:var(--panel-2);}
+.picker-create{color:var(--muted);}
+.picker-selected{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.4em;}
+.picker-item{background:var(--panel-2); border:1px solid var(--border); border-radius:4px; padding:.5em .6em;
+  display:flex; flex-direction:column; gap:.4em;}
+.picker-item-head{display:flex; align-items:center; gap:.5em;}
+.picker-item-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-bright);}
+.picker-remove{color:var(--muted-2); font-size:16px; line-height:1;}
+.picker-remove:hover{color:var(--red);}
+.picker-role{width:100%; font-size:12.5px; padding:.35em .5em;}
+
+@media (max-width: 900px){
+  .wizard-narrative{grid-template-columns:1fr;}
+}
+
+/* ---------- Audit log (Admin page) ---------- */
+.audit-syslog{font-size:12px; line-height:1.6; color:var(--muted); border-left:2px solid var(--border);
+  padding:.5em .8em; margin-bottom:.9em;}
+.audit-syslog-ok{border-left-color:var(--accent-dim); color:var(--text);}
+.audit-syslog-bad{border-left-color:var(--red); color:var(--text);}
+.audit-syslog code{background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:.05em .3em;}
+
+.audit-filters{display:flex; gap:.5em; flex-wrap:wrap; align-items:center; margin-bottom:.8em;}
+.audit-filters select,.audit-filters input{font-size:12px; padding:.35em .5em;}
+.audit-filters input[type="search"]{flex:1; min-width:150px;}
+
+/* No inner max-height/scroller: on its own page the list scrolls with the page.
+   It had one while it was a section of Admin settings, to stop it burying
+   everything below it — which is the problem the separate page solves. */
+.audit-list{display:flex; flex-direction:column; gap:2px;
+  border:1px solid var(--border); border-radius:4px;}
+/* The filter bar stays put while a long page of events scrolls past it. */
+.audit-filters{position:sticky; top:var(--topbar-h, 56px); z-index:20;
+  background:var(--bg); padding:.6em 0 .7em; margin-bottom:0;
+  border-bottom:1px solid var(--border-soft); box-shadow:0 6px 10px -6px var(--shadow);}
+.audit-row{display:flex; gap:.9em; align-items:flex-start; padding:.5em .7em; font-size:12.5px;
+  background:var(--panel-2); border-left:2px solid transparent;}
+.audit-row:hover{background:var(--panel);}
+.audit-when{flex:0 0 105px; color:var(--muted); font-size:11.5px;}
+.audit-main{flex:1; min-width:0;}
+.audit-meta{flex:0 0 auto; display:flex; gap:.6em; align-items:center;}
+.audit-actor{color:var(--text-bright); font-weight:600;}
+.audit-actor-system{color:var(--teal); font-weight:400;}
+.audit-action{color:var(--muted);}
+.audit-target{color:var(--accent);}
+.audit-outcome{color:var(--red); font-size:11px; text-transform:uppercase; letter-spacing:.03em;}
+/* Egress and failures are the two things worth spotting from across the
+   room, so they're the only rows that get a colour. */
+.audit-row-egress{border-left-color:var(--amber);}
+.audit-row-failure,.audit-row-denied{border-left-color:var(--red);}
+.audit-pager{display:flex; align-items:center; gap:1em; margin-top:.7em;}
+.audit-pager button:disabled{opacity:.4; cursor:default;}
+
+/* ---------- Backup & Restore (Admin page) ---------- */
+.backup-panel{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:.8em;}
+.backup-block{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:1em;}
+.backup-block h4{font-size:13px; margin:0 0 .4em;}
+.backup-block .field-hint{margin:0 0 .9em;}
+.backup-block-danger{border-color:var(--red);}
+.backup-block input[type="file"]{display:block; width:100%; margin-bottom:.7em; font-size:12px; color:var(--muted);}
+.restore-result{margin-top:.8em; font-size:12px; color:var(--muted);}
+.restore-result.error{color:var(--red);}
+.restore-warn{font-size:13px; color:var(--amber); line-height:1.5;}
+.restore-summary{margin:.5em 0 1em; padding-left:1.3em; font-size:13px; max-height:220px; overflow-y:auto;}
+.modal-box code{background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:.1em .35em; color:var(--accent);}
+
+/* ---------- AI Assistant: app-wide expandable side panel ----------
+   The tab lives fixed to the right edge of the viewport, independent of
+   whichever .view is currently active (see index.html's comment on why this
+   markup sits outside #app). z-index 3000 clears Leaflet's own panes/controls
+   (max 1000 in leaflet.css) and the global-search dropdown (2000) so the tab/
+   panel are reachable from the Map view too, but stays below the modal
+   backdrop (5000) and toast (4000) so a modal always wins if both are open. */
+.assistant-tab-btn{
+  position:fixed; top:50%; right:0; z-index:3000;
+  transform:translateY(-50%) rotate(180deg); writing-mode:vertical-rl;
+  background:var(--panel); border:1px solid var(--border); border-right:none;
+  border-radius:6px 0 0 6px; color:var(--accent); padding:.9em .5em;
+  font-size:12px; letter-spacing:.04em; font-family:var(--font-ui);
+}
+.assistant-tab-btn:hover{color:var(--text-bright); border-color:var(--accent-dim);}
+.assistant-tab-btn.panel-open{display:none;}
+
+/* Starts below the topbar (height measured at runtime into --topbar-h, since
+   the bar wraps to two rows on a narrow window) so the panel's own header
+   isn't hidden underneath it and the nav stays usable while it's open. */
+.assistant-panel{
+  position:fixed; top:var(--topbar-h, 56px); right:0; bottom:0; width:380px; max-width:92vw; z-index:3000;
+  background:var(--panel); border-left:1px solid var(--border);
+  display:flex; flex-direction:column; box-shadow:-8px 0 24px var(--shadow-soft);
+}
+.assistant-panel-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.8em 1em; border-bottom:1px solid var(--border);
+  color:var(--text-bright); font-weight:600; font-size:13px;
+}
+.assistant-panel-header-actions{display:flex; align-items:center; gap:1em;}
+.assistant-panel-header-actions .btn-link{font-size:16px; line-height:1;}
+.assistant-messages{flex:1; overflow-y:auto; padding:1em; display:flex; flex-direction:column; gap:.9em;}
+.assistant-empty-hint{color:var(--muted); font-size:12px; line-height:1.6;}
+.assistant-msg{border-radius:6px; padding:.6em .8em; font-size:13px; line-height:1.55; max-width:92%;}
+.assistant-msg-user{background:var(--panel-2); border:1px solid var(--border); align-self:flex-end;}
+.assistant-msg-assistant{background:transparent; border:1px solid var(--border-soft); align-self:flex-start;}
+.assistant-msg-assistant p{margin:.4em 0;}
+.assistant-msg-assistant p:first-child{margin-top:0;}
+.assistant-msg-assistant p:last-child{margin-bottom:0;}
+.assistant-msg-assistant ul,.assistant-msg-assistant ol{margin:.4em 0; padding-left:1.3em;}
+.assistant-msg-error{border-color:var(--red); color:var(--red);}
+.assistant-msg-citations{display:flex; flex-wrap:wrap; gap:.4em; margin-top:.6em;}
+.assistant-citation{font-size:11px; padding:.25em .55em; border-radius:10px; background:var(--panel-2); border:1px solid var(--border); color:var(--accent);}
+.assistant-citation:hover{border-color:var(--accent-dim); color:var(--text-bright);}
+.assistant-form{display:flex; gap:.5em; padding:.8em; border-top:1px solid var(--border);}
+.assistant-form textarea{flex:1; resize:vertical; min-height:2.6em;}
+.assistant-status{margin:0; padding:0 1em .8em; color:var(--muted); font-size:12px;}
+.assistant-status.error{color:var(--red);}
+
+@media (max-width: 480px){
+  .assistant-panel{width:100vw; max-width:100vw;}
+}
+
+/* The detail page's neighbourhood graph: same renderer as the Entities page,
+   so it needs the same canvas wrapper, just shorter. */
+/* No fixed height: it fills the pane above the hint. min-height:0 is what
+   lets a flex child shrink below its content instead of pushing the pane. */
+.detail-graph-wrap{flex:1 1 auto; min-height:0; border:1px solid var(--border);
+  border-radius:6px; background:var(--panel); margin-bottom:.4em;}
+
+/* ---------- Deleting for good ----------
+   Destructive controls are red and they say so; the blocked panel explains a
+   refusal rather than just greying a button out. */
+.delete-blocked{border:1px solid var(--red); border-radius:6px; padding:.8em 1em; margin:1em 0;
+  background:var(--panel);}
+.delete-blocked ul{margin:.5em 0 .5em 1.1em; padding:0;}
+.delete-blocked p{margin:.3em 0;}
+
+/* The button that appears under a selection in a document's text. Absolutely
+   positioned inside the text pane, which is the positioned ancestor. */
+.doc-text-head{display:flex; align-items:center; justify-content:space-between; gap:.8em;}
+.doc-text-head h3{margin:0;}
+.doc-text-pane{position:relative;}
+.doc-select-popup{position:absolute; z-index:10; white-space:nowrap;
+  box-shadow:0 4px 12px var(--shadow-soft);}
+
+/* Records somebody made by hand while reading a document. Grouped and
+   visible, not folded into "already decided": watching them accumulate is
+   the feedback that the last one worked. */
+.doc-by-hand{border-left:2px solid var(--accent-dim); padding-left:.8em; margin:.8em 0;}
+.doc-by-hand .view-hint{margin-top:0;}
+
+/* --- Offline maps: source switcher, admin registry, area picker ---------- */
+.map-source-controls{display:flex; align-items:center; gap:.5em; flex-wrap:wrap;}
+.map-source-controls label{color:var(--muted); font-size:12px;}
+.map-source-controls select{min-width:170px;}
+.map-source-note{margin:-.6em 0 .8em; color:var(--amber);}
+.toolbar-actions{display:flex; gap:.5em; flex-wrap:wrap;}
+
+/* The small maps embedded in a form (the debrief place-picker, the admin
+   area-picker). Shorter than the Map view's own, because they sit inside
+   something else that also needs to be readable. */
+.picker-map{height:clamp(200px, 34vh, 360px); border:1px solid var(--border);
+            border-radius:8px; background:var(--panel-2); margin-bottom:.8em;}
+#debrief-map-panel{margin-top:.6em;}
+.debrief-place{display:flex; align-items:center; gap:.6em; flex-wrap:wrap; margin-top:.5em;}
+
+.map-source-row{display:flex; align-items:flex-start; justify-content:space-between; gap:1em;}
+.map-source-main{min-width:0;}
+.map-source-url{color:var(--muted); font-family:var(--font-mono); font-size:11px;
+                overflow-wrap:anywhere;}
+.map-source-controls-cell{display:flex; gap:.4em; flex-wrap:wrap; flex:0 0 auto;}
+/* Two different warnings, and they must not look alike: amber is "this will
+   not work offline", red is "you may not be allowed to do this". */
+.map-pill{font-size:10px; text-transform:uppercase; letter-spacing:.05em;
+          border:1px solid var(--border); border-radius:10px; padding:.1em .6em;}
+.map-pill-offline{color:var(--accent); border-color:var(--accent);}
+.map-pill-online{color:var(--amber); border-color:var(--amber);}
+.map-pill-locked{color:var(--muted);}
+
+.map-pack-row{display:flex; align-items:flex-start; justify-content:space-between; gap:1em;}
+.map-pack-progress{height:6px; background:var(--panel-2); border:1px solid var(--border);
+                   border-radius:3px; overflow:hidden; margin-top:.5em; max-width:320px;}
+.map-pack-bar{height:100%; background:var(--accent); transition:width .4s ease;}
+.map-estimate{margin:.8em 0; padding:.7em .9em; border:1px solid var(--border);
+              border-radius:6px; background:var(--panel-2);}
+.map-estimate-total{font-size:16px; color:var(--text-bright); font-weight:700;}
+.map-estimate-warn{color:var(--amber); margin-top:.4em;}
+.map-estimate-zooms{color:var(--muted); font-size:11px; margin-top:.4em;
+                    font-family:var(--font-mono);}
+.map-draw-hint{color:var(--accent); font-size:12px; margin-bottom:.5em;}
+.inline-fields{display:flex; align-items:center; gap:.5em;}
+.inline-fields input[type="number"]{width:5em;}
+.plain-list{list-style:none; padding:0; margin:.5em 0 0; font-size:12px; color:var(--muted);}
+.plain-list li{padding:.15em 0;}
+
+/* --- Map zones ----------------------------------------------------------- */
+.zone-draw-bar{display:flex; align-items:center; gap:.7em; flex-wrap:wrap;
+               border:1px solid var(--accent); border-radius:6px;
+               padding:.5em .8em; margin-bottom:.6em; color:var(--text-bright);
+               background:var(--panel-2); font-size:12px;}
+/* A crosshair is the only affordance telling an analyst the next click draws
+   rather than creates a record. */
+.zone-drawing{cursor:crosshair !important;}
+.zone-drawing .leaflet-interactive{cursor:crosshair !important;}
+
+.zone-env{color:var(--muted);}
+.zone-expired-pill{font-size:10px; text-transform:uppercase; letter-spacing:.05em;
+                   border:1px solid var(--muted); color:var(--muted);
+                   border-radius:10px; padding:.1em .5em;}
+.zone-swatch{display:inline-block; width:10px; height:10px; border-radius:2px;
+             vertical-align:middle; margin-right:.35em;}
+.zone-timeline{list-style:none; padding:0; margin:.4em 0 1em;}
+.zone-timeline li{padding:.45em 0; border-bottom:1px solid var(--border-soft);}
+.zone-timeline li:last-child{border-bottom:0;}
+.zone-note{color:var(--muted); font-size:12px; margin-top:.2em; margin-left:1.35em;}
+/* While drawing, existing zones must not swallow clicks. Without this, putting
+   a corner inside a zone that is already there opens that zone's panel instead
+   of placing the point, and the analyst cannot draw one area overlapping
+   another — which is exactly what a cordon inside a district is. */
+.zone-drawing .leaflet-overlay-pane path{pointer-events:none !important;}
+.zone-legend{display:flex; align-items:center; gap:1em; flex-wrap:wrap;
+             font-size:11px; color:var(--muted); margin:0 0 .6em;}
+.zone-legend-label{text-transform:uppercase; letter-spacing:.05em;}
+.zone-legend i{display:inline-block; width:10px; height:10px; border-radius:2px;
+               margin-right:.4em; vertical-align:middle;}
+
+/* A record assessed Hostile, wherever its name is shown. Bold as well as red:
+   colour alone fails a colour-blind reader and a greyscale printout, and this
+   is the fact you least want quietly missed. */
+.hostile-name{color:var(--red); font-weight:700;}
+a .hostile-name,.hostile-name a{color:var(--red);}
+
+/* --- Bulk review bar ------------------------------------------------------ */
+.bulk-bar{display:flex; align-items:center; gap:.7em; flex-wrap:wrap;
+          border:1px solid var(--accent); border-radius:6px; padding:.55em .9em;
+          margin-bottom:.8em; background:var(--panel-2); font-size:12px;
+          color:var(--text-bright);}
+.bulk-all{color:var(--muted);}
+.bulk-all button{margin-left:.3em;}
+.queue-card-head .queue-pick{margin-right:.5em;}
+
+/* ---------- Admin: a rail of sections ------------------------------------
+   The page was one long scroll of six unrelated jobs. A rail rather than a
+   tab strip along the top, because this list only ever grows: tabs run out of
+   width and start wrapping into a second row, a vertical list just gets
+   longer. Under 860px the rail becomes a horizontal scroller, where a column
+   would eat half a phone screen. */
+.admin-layout{display:grid; gap:1.4em; align-items:start;
+  grid-template-columns:minmax(150px, 190px) minmax(0, 1fr);}
+.admin-nav{display:flex; flex-direction:column; gap:.2em; position:sticky; top:1em;
+  border:1px solid var(--border); border-radius:6px; background:var(--panel);
+  padding:.4em; min-width:0;}
+.admin-nav-btn{display:block; width:100%; text-align:left; background:none; border:none;
+  border-radius:4px; padding:.5em .7em; font:inherit; color:var(--muted);
+  cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.admin-nav-btn:hover{background:var(--panel-2); color:var(--text);}
+.admin-nav-btn:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
+.admin-nav-btn.active{background:var(--panel-2); color:var(--text-bright);
+  box-shadow:inset 2px 0 0 var(--accent);}
+/* The panel must be allowed to be narrower than its widest child, or a wide
+   table inside it pushes the whole page sideways instead of scrolling itself. */
+.admin-panel{min-width:0;}
+.admin-section > .section-title:first-child{margin-top:0;}
+
+@media (max-width:860px){
+  .admin-layout{grid-template-columns:minmax(0, 1fr);}
+  .admin-nav{flex-direction:row; position:static; overflow-x:auto;
+             gap:.3em; padding:.35em;}
+  .admin-nav-btn{width:auto; flex:0 0 auto;}
+  .admin-nav-btn.active{box-shadow:inset 0 -2px 0 var(--accent);}
+}
+
+/* ---------- Records ---------- */
+.record-body-head{margin:1em 0 .4em; font-size:11px; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--muted);}
+.record-body{white-space:pre-wrap; overflow-wrap:anywhere; margin:0; padding:1em;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
+  font-family:var(--font-ui); font-size:13px; line-height:1.55;
+  max-height:min(70vh, 900px); overflow:auto;}
+.record-link-list{display:flex; flex-direction:column; gap:.3em; max-height:220px; overflow-y:auto;
+  padding:.4em; border:1px solid var(--border-soft); border-radius:4px;}
+.record-link-row{display:flex; align-items:center; gap:.5em; font-size:13px; overflow-wrap:anywhere;}
+.record-text-edit{margin:.8em 0;}
+.record-text-edit summary{cursor:pointer; font-size:13px; color:var(--muted);}
+.record-text-edit textarea{width:100%; margin-top:.5em; font-size:12.5px;}
+.doc-record-note{margin:.3em 0 .8em; font-size:13px;}
+
+/* ---------- Right-click menu on a record ---------- */
+.ctx-menu{position:fixed; z-index:6000; min-width:19em; max-width:min(24em, 92vw);
+  background:var(--panel); border:1px solid var(--border-strong); border-radius:7px;
+  box-shadow:0 10px 28px var(--shadow); padding:.3em; font-size:13px;}
+.ctx-head{padding:.5em .6em .55em; border-bottom:1px solid var(--border-soft); margin-bottom:.3em;
+  display:flex; flex-wrap:wrap; gap:.4em; align-items:center; overflow-wrap:anywhere;}
+.ctx-head strong{color:var(--text-bright);}
+.ctx-sub{flex-basis:100%; color:var(--muted); font-size:11.5px;}
+.ctx-item{display:flex; justify-content:space-between; align-items:baseline; gap:.9em;
+  width:100%; text-align:left; background:none; border:none; color:var(--text);
+  padding:.45em .6em; border-radius:4px; cursor:pointer; font:inherit;}
+.ctx-item:hover:not([disabled]),.ctx-item:focus-visible{background:var(--panel-2); color:var(--text-bright);}
+.ctx-item[disabled]{opacity:.55; cursor:default;}
+.ctx-ai span:first-child::before{content:"◆"; color:var(--accent); margin-right:.5em; font-size:10px;}
+.ctx-item > span:first-child{flex:1 1 auto;}
+.ctx-note{color:var(--muted); font-size:11px; white-space:nowrap; flex:0 0 auto;}
+.ctx-sep{height:1px; background:var(--border-soft); margin:.3em .4em;}
+
+.similar-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.5em;
+  max-height:min(60vh, 520px); overflow-y:auto;}
+.similar-row{display:grid; grid-template-columns:minmax(0,1fr) 5.5em auto; gap:.6em; align-items:center;
+  padding:.5em .6em; background:var(--panel-2); border:1px solid var(--border-soft); border-radius:5px;}
+.similar-main{display:flex; gap:.4em; align-items:center; flex-wrap:wrap; overflow-wrap:anywhere;}
+.similar-score{position:relative; height:1.4em; background:var(--bg); border-radius:3px; overflow:hidden;
+  display:flex; align-items:center; justify-content:flex-end;}
+.similar-bar{position:absolute; left:0; top:0; bottom:0; background:var(--accent-dim); opacity:.65;}
+.similar-num{position:relative; padding-right:.4em; font-size:11.5px; color:var(--text-bright);}
+.similar-actions{display:flex; gap:.4em; flex-wrap:wrap;}
+@media (max-width:620px){
+  .similar-row{grid-template-columns:minmax(0,1fr); }
+}
+
+/* The summary card: a click on a dot in the network answers "who is this?"
+ * here, beside the dot, instead of leaving the page. */
+.summary-card{position:fixed; z-index:6000; width:min(23em, 92vw);
+  background:var(--panel); border:1px solid var(--border-strong); border-radius:7px;
+  box-shadow:0 10px 28px var(--shadow); padding:.75em .85em; font-size:13px;
+  max-height:min(70vh, 34em); overflow-y:auto; overflow-wrap:anywhere;}
+.summary-head{display:flex; flex-wrap:wrap; gap:.4em; align-items:center; margin-bottom:.35em;}
+.summary-head .type-pill{margin-bottom:0;}
+.summary-name{color:var(--text-bright); font-size:14.5px;}
+.summary-alignment{font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--muted); border:1px solid var(--border); border-radius:3px; padding:.1em .45em;}
+.summary-alignment-hostile{color:var(--red); border-color:var(--red);}
+.summary-desc{color:var(--muted); margin:.2em 0 .5em; line-height:1.45;}
+.summary-facts{display:grid; grid-template-columns:auto minmax(0,1fr); gap:.15em .7em;
+  margin:.1em 0 .55em;}
+.summary-facts dt{color:var(--muted); font-size:11.5px; text-transform:uppercase;
+  letter-spacing:.03em; white-space:nowrap;}
+.summary-facts dd{margin:0; color:var(--text);}
+.summary-counts{color:var(--muted); font-size:11.5px; border-top:1px solid var(--border-soft);
+  padding-top:.45em;}
+.summary-rels{list-style:none; margin:.4em 0 0; padding:0; display:flex;
+  flex-direction:column; gap:.3em;}
+.summary-rels li{display:flex; flex-wrap:wrap; gap:.4em; align-items:baseline;}
+.summary-rel-type{color:var(--muted); font-size:11.5px;}
+.summary-rels .btn-link{font-size:13px; text-align:left;}
+.summary-conf{color:var(--muted); font-size:11px;}
+.summary-actions{display:flex; gap:.5em; margin-top:.7em;}
+.detail-graph-hint{flex:0 0 auto; color:var(--muted); font-size:11.5px; margin:0 0 .1em;}

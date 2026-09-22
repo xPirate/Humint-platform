@@ -1,0 +1,88 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Background worker: OCR + text extraction on uploaded attachments, Ollama
+  # entity/relationship extraction, and cross-report/entity correlation.
+  # Never touches the request/response path — the api service writes
+  # attachments and returns immediately; this picks them up on its own poll
+  # loop, on the standing rule that the user-facing path never blocks on an
+  # LLM call.
+  worker:
+    build: ./worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    volumes:
+      - uploads:/data/uploads
+      # Offline map packs. A separate volume from uploads because packs are
+      # large, re-downloadable, and have no business in a case-file backup.
+      - mappacks:/data/map-packs
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      worker:
+        condition: service_started
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    ports:
+      - "${API_PORT:-8080}:8000"
+    volumes:
+      - ./frontend:/app/frontend:ro
+      - uploads:/data/uploads
+      # Read-write only because deleting a pack removes its file; the api
+      # never writes tiles, the worker does.
+      - mappacks:/data/map-packs
+
+  # Optional: only starts if you run `docker compose --profile local-llm up -d`.
+  # Skip this entirely and point OLLAMA_BASE_URL (in .env) at an Ollama
+  # instance you already run elsewhere on your network.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    profiles: ["local-llm"]
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    # Uncomment if you have an NVIDIA GPU + nvidia-container-toolkit installed
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  pgdata:
+  uploads:
+  mappacks:
+  ollama_data:

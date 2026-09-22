@@ -1,0 +1,64 @@
+SYNTHETIC EXERCISE DOCUMENT — fictional. No real person, company, group, address or event appears in this file.
+
+LEAKED INTERNAL CORRESPONDENCE — Halvard Industrial Services
+Exported from mail archive. Four messages. Thread subject: Weekend equipment.
+
+------------------------------------------------------------------
+From:    Miles Trombley <m.trombley@halvardindustrial.example>
+To:      Glenn Mabey <g.mabey@halvardindustrial.example>
+Cc:      dransom@wolfcreekholdings.example
+Date:    29 August, 18:42
+Subject: Weekend equipment
+
+Glenn — need the two white box trucks and the flatbed off the yard Friday
+after six, back Sunday night. Same as July. Dale's people will collect, they
+have the gate code.
+
+Don't put it through the scheduler. Book it as yard maintenance.
+
+Miles
+
+------------------------------------------------------------------
+From:    Glenn Mabey <g.mabey@halvardindustrial.example>
+To:      Miles Trombley <m.trombley@halvardindustrial.example>
+Date:    29 August, 19:05
+Subject: RE: Weekend equipment
+
+Fine. Fuel cards stay with me this time, July's came back four hundred down.
+
+Tell Curtis the flatbed ramp is bent, it'll take weight but don't drag
+anything onto it.
+
+G.
+
+------------------------------------------------------------------
+From:    Rosalind Pike <r.pike@halvardindustrial.example>
+To:      Miles Trombley <m.trombley@halvardindustrial.example>
+Cc:      Della Kroft <d.kroft@halvardindustrial.example>
+Date:    30 August, 09:11
+Subject: RE: Weekend equipment
+
+Miles — I've been copied on this by the scheduler.
+
+Company vehicles leaving the yard for a non-client purpose is a notifiable use
+under our fleet insurance and under the county contract we signed in March. I
+also don't know who dransom@wolfcreekholdings.example is and I can't find Wolf
+Creek Holdings in the vendor file as anything but a payee.
+
+Please stop booking these as yard maintenance. I need to log it properly or
+not at all.
+
+Rosalind Pike
+VP Compliance
+
+------------------------------------------------------------------
+From:    Miles Trombley <m.trombley@halvardindustrial.example>
+To:      Rosalind Pike <r.pike@halvardindustrial.example>
+Date:    30 August, 09:38
+Subject: RE: Weekend equipment
+
+Rosalind — it's a community thing, we've done it for years. Vernon knows.
+
+Leave it.
+
+M.
