@@ -15,10 +15,6 @@ if you want extraction — Ollama, all in Docker Compose on one machine. No
 account, no cloud service, no telemetry. It is comfortable on a Raspberry Pi
 4 without the model, and wants more memory with one.
 
-> **Beta.** This is being tested by a small group. It works, it is tested
-> (66 automated suites, API and browser), and it is not yet something to
-> stake a real operation on. See [Deliberate limitations](docs/DESIGN.md#deliberate-limitations-read-before-relying-on-this-for-anything-important).
-
 ![The Entities page: a collapsible tree beside the relationship network](docs/images/entities.png)
 
 ---
