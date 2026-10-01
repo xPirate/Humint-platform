@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A field notebook with an aerial. Drawn rather than drafted in: an icon
+     file nobody can edit is worse than twenty lines of vector. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#39FF88"
+        android:pathData="M36,32h34a4,4 0 0 1 4,4v40a4,4 0 0 1 -4,4h-34a4,4 0 0 1 -4,-4v-40a4,4 0 0 1 4,-4z"
+        android:fillAlpha="0.18" />
+    <path android:fillColor="#39FF88"
+        android:pathData="M36,32h34a4,4 0 0 1 4,4v40a4,4 0 0 1 -4,4h-34a4,4 0 0 1 -4,-4v-40a4,4 0 0 1 4,-4zM36,38v36h34v-36z" />
+    <path android:fillColor="#39FF88" android:pathData="M42,46h22v3h-22zM42,54h22v3h-22zM42,62h14v3h-14z" />
+    <path android:fillColor="#39FF88" android:pathData="M52.5,20h3v12h-3z" />
+    <path android:strokeColor="#39FF88" android:strokeWidth="2.6" android:fillColor="#00000000"
+        android:pathData="M44,24a14,14 0 0 1 20,0" />
+    <path android:strokeColor="#39FF88" android:strokeWidth="2.6" android:fillColor="#00000000"
+        android:pathData="M48.5,29a8,8 0 0 1 11,0" />
+</vector>

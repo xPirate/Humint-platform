@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      What this app asks for, and what it deliberately does not.
+
+      INTERNET is here because the app has to upload. ACCESS_NETWORK_STATE is
+      not: the app never asks "am I online", it just tries, and reports what
+      happened. Asking is a permission spent on a worse answer.
+
+      There is no ACCESS_BACKGROUND_LOCATION and no foreground location
+      service. Position is read while a report is open on screen and not a
+      moment otherwise — a tool that tracks the analyst is a different tool,
+      and not one anybody asked for.
+
+      There is no READ_EXTERNAL_STORAGE / READ_MEDIA_IMAGES. Photos and clips
+      are captured by this app into its own sandbox. It cannot read the
+      gallery, which means a seized phone's gallery is not something this app
+      can be made to exfiltrate.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <application
+        android:name=".FieldApp"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HumintField"
+        android:localeConfig="@xml/locales_config">
+
+        <!--
+          android:allowBackup="false" and the extraction rules together keep
+          the encrypted database out of cloud backup and out of device-to-
+          device transfer. The queue is meant to exist on exactly one handset
+          until it is uploaded and deleted.
+
+          excludeFromRecents is not set, but FLAG_SECURE is applied in
+          MainActivity: the recents thumbnail of a half-written report about
+          somebody is not a thing to leave lying around.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

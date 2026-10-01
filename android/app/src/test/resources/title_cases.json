@@ -1,0 +1,158 @@
+{
+  "generated_from": "api/field_templates.py compose_title",
+  "cases": [
+    {
+      "template": "vehicle",
+      "fields": {
+        "color": "white",
+        "make": "Ford",
+        "model": "Ranger",
+        "plate": "ABC 1234"
+      },
+      "expected": "white Ford Ranger \u00b7 ABC 1234"
+    },
+    {
+      "template": "vehicle",
+      "fields": {
+        "make": "Ford",
+        "model": "Ranger"
+      },
+      "expected": "Ford Ranger"
+    },
+    {
+      "template": "vehicle",
+      "fields": {
+        "plate": "ABC 1234"
+      },
+      "expected": "ABC 1234"
+    },
+    {
+      "template": "vehicle",
+      "fields": {
+        "color": "white"
+      },
+      "expected": "white"
+    },
+    {
+      "template": "vehicle",
+      "fields": {},
+      "expected": "Field report"
+    },
+    {
+      "template": "vehicle",
+      "fields": {
+        "color": "  white  ",
+        "make": "Ford"
+      },
+      "expected": "white Ford"
+    },
+    {
+      "template": "sigint",
+      "fields": {
+        "frequency": "146.940",
+        "station_id": "W5ABC"
+      },
+      "expected": "146.940 \u00b7 W5ABC"
+    },
+    {
+      "template": "sigint",
+      "fields": {
+        "frequency": "146.940"
+      },
+      "expected": "146.940"
+    },
+    {
+      "template": "sigint",
+      "fields": {
+        "station_id": "W5ABC"
+      },
+      "expected": "W5ABC"
+    },
+    {
+      "template": "sigint",
+      "fields": {},
+      "expected": "Field report"
+    },
+    {
+      "template": "df",
+      "fields": {
+        "frequency": "146.94",
+        "bearing_deg": 212
+      },
+      "expected": "146.94 bearing 212\u00b0"
+    },
+    {
+      "template": "df",
+      "fields": {
+        "bearing_deg": 212
+      },
+      "expected": "bearing 212\u00b0"
+    },
+    {
+      "template": "df",
+      "fields": {
+        "frequency": "146.94"
+      },
+      "expected": "146.94"
+    },
+    {
+      "template": "df",
+      "fields": {},
+      "expected": "Field report"
+    },
+    {
+      "template": "individual",
+      "fields": {
+        "name": "the tall one in the grey coat"
+      },
+      "expected": "the tall one in the grey coat"
+    },
+    {
+      "template": "individual",
+      "fields": {
+        "aliases": [
+          "Grey coat",
+          "Tom"
+        ]
+      },
+      "expected": "Field report"
+    },
+    {
+      "template": "place",
+      "fields": {
+        "place_name": "The north gate"
+      },
+      "expected": "The north gate"
+    },
+    {
+      "template": "salute",
+      "fields": {
+        "activity": "Loading crates into a panel van"
+      },
+      "expected": "Loading crates into a panel van"
+    },
+    {
+      "template": "note",
+      "fields": {
+        "summary": "Gate open at the north compound"
+      },
+      "expected": "Gate open at the north compound"
+    },
+    {
+      "template": "note",
+      "fields": {
+        "body": "no summary given"
+      },
+      "expected": "no summary given"
+    },
+    {
+      "template": "sigint",
+      "fields": {
+        "frequency": "146.940",
+        "station_id": "W5ABC",
+        "verbatim": false
+      },
+      "expected": "146.940 \u00b7 W5ABC"
+    }
+  ]
+}

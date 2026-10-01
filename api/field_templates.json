@@ -1,0 +1,245 @@
+{
+  "_comment": [
+    "The seven shapes a field report can take. This file is the contract",
+    "between the console and the companion app, and it is the only place",
+    "either of them learns what a template's fields are called.",
+    "",
+    "The app cannot fetch it. A handset is off-network until the moment it",
+    "uploads, and by then the report is already written — so the app ships a",
+    "copy compiled in, and the Android build copies this exact file into its",
+    "assets rather than keeping a second hand-maintained version that drifts.",
+    "",
+    "`version` is what lets the two ends notice they disagree. It goes up on",
+    "any change to a field key, a template key, or an entity mapping; the",
+    "submission carries the version it was written against, GET",
+    "/api/intake/hello returns the console's, and a mismatch is reported to",
+    "the analyst as a warning rather than an error. Renaming or dropping a",
+    "field key is what a version bump is FOR: old reports keep the keys they",
+    "were written with, and the console renders an unknown key under its raw",
+    "name rather than dropping it. Nothing here may ever cause a submission",
+    "to be refused.",
+    "",
+    "A template needs either a field marked `required`, or a `require_any`",
+    "list saying which fields would between them identify the thing. A vehicle",
+    "has no one such field -- sometimes all you get is a plate, sometimes only",
+    "a colour and a shape -- but a report with none of them is not about a",
+    "vehicle at all.",
+    "",
+    "`entity.name` may be a list of patterns. The first that fills to",
+    "something non-empty wins, so a sighting with only a plate still makes a",
+    "record rather than none.",
+    "",
+    "Labels and wording are read by a person standing outside in the weather.",
+    "Short beats precise."
+  ],
+
+  "version": 1,
+
+  "criticality": ["Routine", "Priority", "Immediate", "Flash"],
+
+  "templates": [
+    {
+      "key": "sigint",
+      "label": "Signal",
+      "blurb": "Something you heard on the air.",
+      "title": "{frequency} · {station_id}",
+      "capture": ["audio", "photo"],
+      "entity": {
+        "type": "communication",
+        "name": "{frequency} {station_id}",
+        "details": {
+          "medium": "medium",
+          "medium_detail": "frequency",
+          "occurred_at": "$observed_at",
+          "participants_note": "station_id"
+        }
+      },
+      "fields": [
+        {"key": "frequency", "label": "Frequency", "type": "text", "required": true,
+         "hint": "146.940", "suffix": "MHz", "keyboard": "decimal", "autofocus": true},
+        {"key": "medium", "label": "Band", "type": "select", "default": "VHF Radio",
+         "options": ["HF Radio", "VHF Radio", "UHF Radio", "FM Radio", "GMRS", "FRS",
+                     "CB Radio", "Satellite Phone", "Other"]},
+        {"key": "mode", "label": "Mode", "type": "select",
+         "options": ["FM", "AM", "USB", "LSB", "CW", "Digital", "P25", "DMR", "Unknown"],
+         "default": "FM"},
+        {"key": "station_id", "label": "Who", "type": "text",
+         "hint": "callsign, unit, name — or what they called themselves"},
+        {"key": "strength", "label": "Signal", "type": "select",
+         "options": ["Barely readable", "Readable with difficulty", "Readable",
+                     "Good", "Full quieting"], "default": "Readable"},
+        {"key": "verbatim", "label": "Verbatim", "type": "bool", "default": false,
+         "hint": "tick if the next box is word for word"},
+        {"key": "message", "label": "What was said", "type": "textarea", "required": true,
+         "hint": "word for word where you can, the gist where you can't"}
+      ]
+    },
+
+    {
+      "key": "individual",
+      "label": "Person",
+      "blurb": "Someone you saw.",
+      "title": "{name}",
+      "capture": ["photo", "audio"],
+      "entity": {
+        "type": "person",
+        "name": "{name}",
+        "details": {
+          "aliases": "aliases",
+          "physical_description": "description",
+          "alignment": "alignment",
+          "occupation": "role"
+        }
+      },
+      "fields": [
+        {"key": "name", "label": "Name or what they were called", "type": "text",
+         "required": true, "hint": "\"the tall one in the grey coat\" is a name too",
+         "autofocus": true},
+        {"key": "aliases", "label": "Also known as", "type": "list",
+         "hint": "one per line"},
+        {"key": "description", "label": "What they look like", "type": "textarea",
+         "required": true, "hint": "height, build, hair, marks, what they were wearing"},
+        {"key": "role", "label": "Role or job", "type": "text"},
+        {"key": "alignment", "label": "Read on them", "type": "select",
+         "options": ["Unknown", "Friendly", "Neutral", "Hostile"], "default": "Unknown"},
+        {"key": "seen_with", "label": "Who they were with", "type": "text"},
+        {"key": "details", "label": "What they were doing", "type": "textarea"}
+      ]
+    },
+
+    {
+      "key": "vehicle",
+      "label": "Vehicle",
+      "blurb": "A vehicle you saw.",
+      "title": "{color} {make} {model} · {plate}",
+      "capture": ["photo", "video"],
+      "require_any": ["plate", "make", "model", "color"],
+      "entity": {
+        "type": "vehicle",
+        "name": ["{color} {make} {model}", "{make} {model}", "{plate}"],
+        "details": {
+          "make": "make",
+          "model": "model",
+          "color": "color",
+          "license_plate": "plate",
+          "plate_region": "plate_region",
+          "style": "style",
+          "notes": "description"
+        }
+      },
+      "fields": [
+        {"key": "plate", "label": "Plate", "type": "text", "hint": "as written, spaces and all",
+         "capitalize": true, "autofocus": true},
+        {"key": "plate_region", "label": "Issued by", "type": "text", "hint": "state or country"},
+        {"key": "color", "label": "Colour", "type": "text"},
+        {"key": "make", "label": "Make", "type": "text", "hint": "Ford, Toyota…"},
+        {"key": "model", "label": "Model", "type": "text"},
+        {"key": "style", "label": "Body", "type": "select",
+         "options": ["Sedan", "Coupe", "Hatchback", "SUV", "Pickup truck", "Van",
+                     "Panel van", "Box truck", "Semi-tractor", "Bus", "Motorcycle",
+                     "ATV/UTV", "Trailer", "Boat", "Aircraft", "Other"]},
+        {"key": "occupants", "label": "Who was in it", "type": "text",
+         "hint": "how many, and anything about them"},
+        {"key": "direction", "label": "Heading", "type": "text",
+         "hint": "which way it went"},
+        {"key": "description", "label": "Anything else", "type": "textarea",
+         "hint": "damage, markings, roof rack, ladder, aerials"}
+      ]
+    },
+
+    {
+      "key": "salute",
+      "label": "Activity",
+      "blurb": "Something happening. Size, activity, location, unit, time, equipment.",
+      "title": "{activity}",
+      "capture": ["photo", "video", "audio"],
+      "entity": {
+        "type": "event",
+        "name": "{activity}",
+        "details": {
+          "started_at": "$observed_at"
+        }
+      },
+      "fields": [
+        {"key": "size", "label": "Size", "type": "text",
+         "hint": "how many people, vehicles, whatever it is", "autofocus": true},
+        {"key": "activity", "label": "Activity", "type": "textarea", "required": true,
+         "hint": "what they are doing"},
+        {"key": "location_desc", "label": "Location", "type": "text",
+         "hint": "in words — the position is already attached"},
+        {"key": "unit", "label": "Unit or group", "type": "text",
+         "hint": "who they are, or what they are wearing that says so"},
+        {"key": "equipment", "label": "Equipment", "type": "textarea",
+         "hint": "vehicles, weapons, radios, tools"}
+      ]
+    },
+
+    {
+      "key": "df",
+      "label": "Bearing",
+      "blurb": "A direction-finding cut. Two or three of these cross-fix a transmitter.",
+      "title": "{frequency} bearing {bearing_deg}°",
+      "capture": ["audio", "photo"],
+      "fields": [
+        {"key": "frequency", "label": "Frequency", "type": "text", "required": true,
+         "hint": "146.940", "suffix": "MHz", "keyboard": "decimal", "autofocus": true},
+        {"key": "bearing_deg", "label": "Bearing", "type": "number", "required": true,
+         "min": 0, "max": 359, "suffix": "°", "keyboard": "number"},
+        {"key": "bearing_ref", "label": "Referenced to", "type": "select",
+         "options": ["Magnetic", "True"], "default": "Magnetic"},
+        {"key": "strength", "label": "Signal", "type": "select",
+         "options": ["Barely readable", "Readable with difficulty", "Readable",
+                     "Good", "Full quieting"], "default": "Readable"},
+        {"key": "mode", "label": "Mode", "type": "select",
+         "options": ["FM", "AM", "USB", "LSB", "CW", "Digital", "P25", "DMR", "Unknown"],
+         "default": "FM"},
+        {"key": "antenna", "label": "Antenna", "type": "text",
+         "hint": "3-el yagi, body fade, loop…"},
+        {"key": "confidence", "label": "How sure", "type": "select",
+         "options": ["Sharp null", "Reasonable", "Rough"], "default": "Reasonable"},
+        {"key": "notes", "label": "Notes", "type": "textarea"}
+      ]
+    },
+
+    {
+      "key": "place",
+      "label": "Place",
+      "blurb": "What is normally here, and what is here now.",
+      "title": "{place_name}",
+      "capture": ["photo", "video"],
+      "entity": {
+        "type": "location",
+        "name": "{place_name}",
+        "details": {
+          "address": "address",
+          "lat": "$lat",
+          "lng": "$lng"
+        }
+      },
+      "fields": [
+        {"key": "place_name", "label": "What is it", "type": "text", "required": true,
+         "hint": "the depot, the north gate, 4th and Main", "autofocus": true},
+        {"key": "address", "label": "Address", "type": "text"},
+        {"key": "normally", "label": "Normally", "type": "textarea",
+         "hint": "what you would expect to find here"},
+        {"key": "observed", "label": "This time", "type": "textarea", "required": true,
+         "hint": "what was actually here"},
+        {"key": "access", "label": "Getting in and out", "type": "textarea",
+         "hint": "gates, cameras, who is watching"}
+      ]
+    },
+
+    {
+      "key": "note",
+      "label": "Note",
+      "blurb": "No form. Talk, type, or both.",
+      "title": "{summary}",
+      "capture": ["audio", "photo", "video"],
+      "fields": [
+        {"key": "summary", "label": "One line", "type": "text", "required": true,
+         "hint": "enough to find it again", "autofocus": true},
+        {"key": "body", "label": "The rest", "type": "textarea"}
+      ]
+    }
+  ]
+}

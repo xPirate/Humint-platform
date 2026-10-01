@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nothing leaves this app.
+
+  The queue is the sensitive thing on the handset, and cloud backup or a
+  device-to-device transfer would put it somewhere this app's encryption key
+  is not — the key is in this phone's keystore and does not travel, so a
+  restored copy would be unreadable anyway, but the right answer is not to
+  copy it at all.
+-->
+<data-extraction-rules>
+    <cloud-backup><exclude domain="root" /></cloud-backup>
+    <device-transfer><exclude domain="root" /></device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Plain HTTP is allowed, deliberately.
+
+  From Android 9 onward cleartext is blocked by default, and that default is
+  right for an app that talks to the public internet. This one does not. It
+  talks to exactly one address: a self-hosted console on a LAN, whose address
+  it is told at upload time by scanning a QR code. Those deployments run on
+  http://<something>:8080 far more often than not — there is no certificate
+  authority on a field network, and a self-signed certificate would mean
+  either pinning something the app cannot know at build time or teaching
+  analysts to tap through a trust warning, which is worse than cleartext.
+
+  What bounds the exposure:
+
+    - The app makes no other network calls. No analytics, no crash reporter,
+      no update check. The only host it ever contacts is the one the analyst
+      scanned a code for, seconds earlier, standing in front of it.
+    - The token it sends is write-only. Somebody reading the traffic learns
+      the console's address and gains the ability to post a field report into
+      a queue a human then reviews. They cannot read the case file with it.
+    - What is actually sensitive — the reports themselves — is encrypted on
+      the handset, and in transit is only as exposed as the network the team
+      chose to run the console on.
+
+  If you do put the console behind TLS, tighten this: replace the base config
+  with a domain-config naming your host and set cleartextTrafficPermitted to
+  false. The app needs no change to work over https, only this file.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <!-- A certificate an admin installed on the handset counts too,
+                 so a team that does run an internal CA can use it without
+                 rebuilding the app. -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
