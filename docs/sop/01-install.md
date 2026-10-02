@@ -51,8 +51,8 @@ substitute accordingly, or install the plugin.
 ## 3. Get the code
 
 ```bash
-git clone https://github.com/xPirate/Humintelligence.git
-cd Humintelligence
+git clone https://github.com/xPirate/humint-platform.git
+cd humint-platform
 ```
 
 ## 4. Write your `.env`

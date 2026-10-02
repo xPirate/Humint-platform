@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.FileOutputOptions
@@ -16,12 +15,10 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -36,9 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -46,18 +41,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.humint.field.data.mediaDir
 import org.humint.field.media.Capture
 import java.io.File
 
 /**
- * Taking a photo, a clip or a recording, without leaving the report.
+ * Recording a clip or a voice memo, without leaving the report.
  *
  * A bottom sheet rather than a separate screen: the analyst is mid-report
  * and every navigation is a chance to lose the thread of what they were
  * writing. The sheet also means the camera is torn down the moment it is
  * dismissed, which matters on a phone whose battery is the day's budget.
+ *
+ * Photos are the exception and live in [PhotoCaptureScreen]. A sheet sizes
+ * itself to its content, which put the shutter button off the bottom of the
+ * screen — see the note there.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,37 +101,10 @@ fun CaptureSheet(
                 )
             } else when (kind) {
                 "audio" -> AudioPane(onDone)
-                "video" -> VideoPane(onDone)
-                else -> PhotoPane(onDone)
+                else -> VideoPane(onDone)
             }
         }
     }
-}
-
-@Composable
-private fun PhotoPane(onDone: (Capture.Captured?) -> Unit) {
-    val context = LocalContext.current
-    val owner = LocalLifecycleOwner.current
-    val scope = rememberCoroutineScope()
-    val capture = remember { ImageCapture.Builder().build() }
-    var busy by remember { mutableStateOf(false) }
-
-    CameraPreview(bind = { provider, preview ->
-        provider.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
-    })
-
-    Button(
-        onClick = {
-            if (busy) return@Button
-            busy = true
-            scope.launch {
-                val result = runCatching { Capture.takePhoto(context, capture) }
-                onDone(result.getOrNull())
-            }
-        },
-        enabled = !busy,
-        modifier = Modifier.fillMaxWidth().heightIn(min = TapTarget).padding(top = 12.dp),
-    ) { Text(if (busy) "Saving…" else "Take the photo") }
 }
 
 // withAudioEnabled() needs RECORD_AUDIO, which this sheet requested and

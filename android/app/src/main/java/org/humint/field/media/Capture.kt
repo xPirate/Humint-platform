@@ -181,8 +181,22 @@ object Capture {
         runCatching { Crypto.openBytes(context, File(path).readBytes()) }.getOrNull()
 
     fun jpegThumbnail(bytes: ByteArray, maxEdge: Int = 256): ByteArray? = runCatching {
-        val full = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            ?: return null
+        // Measure first, then decode at a power-of-two reduction. Decoding a
+        // 12-megapixel photo at full size only to scale it down to a 56dp
+        // square costs about 48 MB of heap per picture, and a report with
+        // four photos on it would be the last thing the process ever did.
+        val measure = android.graphics.BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, measure)
+        var sample = 1
+        while (maxOf(measure.outWidth, measure.outHeight) / (sample * 2) >= maxEdge) {
+            sample *= 2
+        }
+        val full = android.graphics.BitmapFactory.decodeByteArray(
+            bytes, 0, bytes.size,
+            android.graphics.BitmapFactory.Options().apply { inSampleSize = sample },
+        ) ?: return null
         val scale = maxEdge.toFloat() / maxOf(full.width, full.height)
         val small = if (scale >= 1f) full else android.graphics.Bitmap.createScaledBitmap(
             full, (full.width * scale).toInt().coerceAtLeast(1),

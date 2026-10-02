@@ -28,8 +28,8 @@ account, no cloud service, no telemetry. It is comfortable on a Raspberry Pi
 You need Docker and Docker Compose. Nothing else.
 
 ```bash
-git clone https://github.com/xPirate/Humint-platform.git
-cd Humint-platform
+git clone https://github.com/xPirate/humint-platform.git
+cd humint-platform
 cp .env.example .env
 # Open .env and set POSTGRES_PASSWORD to something real.
 docker compose up -d --build
@@ -210,11 +210,25 @@ pass still proposes links using plain SQL over what you have entered.
 | | |
 |---|---|
 | ![Dashboard](docs/images/dashboard.png) **Dashboard** — what needs attention, computed from your own records, no model involved. | ![Entity detail](docs/images/entity-detail.png) **A record** — its details, contacts, neighbourhood and every report that mentions it. |
-| ![Documents](docs/images/documents.png) **Documents** — the inbox: drop a file in, see what was pulled out of it. | ![Review](docs/images/review.png) **Review** — suggestions with their evidence, filtered by kind and source. |
+| ![Documents](docs/images/documents.png) **Documents** — the inbox: drop a file in, watch it go from *waiting* to *read*, see what was pulled out of it. The one that failed says why. | ![Review](docs/images/review.png) **Review** — proposals with their confidence and their source. Nothing here is in the case file yet. |
+
+**A document, and what was proposed from it.** The text on the left is what
+was read out of the file; the cards on the right are what a model thought was
+in it. Each one is accepted or dismissed by a person, and *Find in text*
+shows you the sentence it came from before you decide.
+
+![A document open beside the entities and the relationship proposed from it](docs/images/document-review.png)
+
+**Light and dark.** The same screen, the same case file, both palettes. Dark
+is the phosphor-green this tool has always used; light exists because
+green-on-black is unreadable outdoors in daylight. The switch is in the
+account menu and follows your operating system if you let it.
+
+![The Entities page in the light theme beside the same page in the dark theme](docs/images/themes.png)
 
 *Every name, place, company and phone number in these screenshots is
-invented. They are from the training exercise that ships with the
-project — see [the exercise briefing](docs/exercise/BRIEFING.md).*
+invented. They are from the sample case files that ship with the project —
+see [the exercise briefing](docs/exercise/BRIEFING.md).*
 
 ## Documentation
 

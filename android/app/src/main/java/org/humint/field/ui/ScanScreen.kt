@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import org.humint.field.FieldViewModel
 import org.humint.field.media.QrAnalyzer
 import org.json.JSONObject
@@ -92,6 +93,8 @@ fun ScanScreen(vm: FieldViewModel, onScanned: () -> Unit, onCancel: () -> Unit) 
 
             if (granted && !typing) {
                 val executor = remember { Executors.newSingleThreadExecutor() }
+                var looked by remember { mutableStateOf(0) }
+                var fault by remember { mutableStateOf<String?>(null) }
                 val analysis = remember {
                     ImageAnalysis.Builder()
                         // Drop frames rather than queue them: the analyst is
@@ -100,8 +103,10 @@ fun ScanScreen(vm: FieldViewModel, onScanned: () -> Unit, onCancel: () -> Unit) 
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
                 }
-                LaunchedEffect(analysis) {
-                    analysis.setAnalyzer(executor, QrAnalyzer { payload ->
+                // QrAnalyzer guarantees onFound arrives on the main thread,
+                // so this can navigate and tear the camera down safely.
+                val analyzer = remember {
+                    QrAnalyzer(onFound = { payload ->
                         if (handled) return@QrAnalyzer
                         handled = true
                         vm.onScanned(payload) { ok ->
@@ -109,11 +114,37 @@ fun ScanScreen(vm: FieldViewModel, onScanned: () -> Unit, onCancel: () -> Unit) 
                         }
                     })
                 }
+                LaunchedEffect(analysis, analyzer) {
+                    analysis.setAnalyzer(executor, analyzer)
+                    // Read the counters on a timer rather than being called
+                    // back per frame — thirty wake-ups a second to update a
+                    // line of text is a cost the battery does not need, and
+                    // the first version did it from the camera thread.
+                    while (true) {
+                        delay(400)
+                        looked = analyzer.frames.get()
+                        fault = analyzer.lastError.get()
+                    }
+                }
                 CameraPreview(bind = { provider, preview ->
                     provider.bindToLifecycle(
                         owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
                 })
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    when {
+                        fault != null -> "The scanner is failing on this phone: $fault"
+                        looked == 0 -> "Starting the camera…"
+                        looked < 25 -> "Looking… fill the frame with the code."
+                        else -> "Still looking — try more light, or move back a little " +
+                                "so the whole code is in frame. ($looked frames)"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (fault != null) MaterialTheme.colorScheme.error
+                            else if (looked >= 25) FieldAmber
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(6.dp))
                 Text(
                     "Nothing about the console is written to this phone. When the upload is " +
                     "finished, or the app goes to the background, it is forgotten again.",

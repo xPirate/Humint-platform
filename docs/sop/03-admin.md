@@ -119,8 +119,8 @@ Copy the project to a second directory, give it its own port and its own
 volume namespace, and restore into that:
 
 ```bash
-cp -r Humintelligence humint-scratch && cd humint-scratch
-cp ../Humintelligence/.env .
+cp -r humint-platform humint-scratch && cd humint-scratch
+cp ../humint-platform/.env .
 sed -i 's/^API_PORT=.*/API_PORT=8081/' .env
 docker compose -p humint-scratch up -d --build
 ```
@@ -131,7 +131,7 @@ down with `docker compose -p humint-scratch down -v` when you are finished.
 ## Upgrading
 
 ```bash
-cd Humintelligence
+cd humint-platform
 git pull
 docker compose up -d --build
 ```

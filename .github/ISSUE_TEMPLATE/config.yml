@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security issue
+    url: https://github.com/xPirate/humint-platform/blob/main/CONTRIBUTING.md#security
+    about: Do not open a public issue. Contact the maintainer directly.

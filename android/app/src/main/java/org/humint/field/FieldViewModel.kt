@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.humint.field.data.AttachmentRow
 import org.humint.field.data.Crypto
 import org.humint.field.data.FieldDao
@@ -94,17 +96,39 @@ class FieldViewModel(app: Application) : AndroidViewModel(app) {
     fun reportFlow(id: String) = dao().reportFlow(id)
     fun attachmentsFlow(id: String) = dao().attachmentsFlow(id)
 
-    fun save(row: ReportRow) = viewModelScope.launch {
-        val template = Templates.byKey(row.template)
-        val values = row.fields.toMap()
-        dao().update(row.copy(
-            // The title always follows the fields. An analyst who renames a
-            // vehicle's plate should not be left with a queue entry still
-            // showing the old one.
-            title = template?.composeTitle(values) ?: row.title,
-            updatedAt = System.currentTimeMillis(),
-        ))
+    /**
+     * Change one report, from whatever is in the database right now.
+     *
+     * Not `update(someRowTheScreenIsHolding)`, which is what this used to
+     * be. The form has several fields committing independently and slightly
+     * apart in time; each one holds the row as it looked when that field was
+     * last recomposed. Writing a whole stale copy means the second write
+     * silently reverts the first — the analyst fills in a plate, then a
+     * colour, and the plate quietly goes back to empty.
+     *
+     * So: re-read, apply the change, write. The mutex keeps two edits from
+     * interleaving between the read and the write.
+     */
+    fun edit(id: String, change: (ReportRow) -> ReportRow) = viewModelScope.launch {
+        editLock.withLock {
+            val current = dao().report(id) ?: return@withLock
+            val next = change(current)
+            val template = Templates.byKey(next.template)
+            dao().update(next.copy(
+                // The title always follows the fields. An analyst who
+                // corrects a vehicle's plate should not be left with a queue
+                // entry still showing the old one.
+                title = template?.composeTitle(next.fields.toMap()) ?: next.title,
+                updatedAt = System.currentTimeMillis(),
+            ))
+        }
     }
+
+    private val editLock = Mutex()
+
+    /** Whole-row write. Only for changes that own the entire row — status
+     *  transitions and the like. Field edits go through [edit]. */
+    fun save(row: ReportRow) = edit(row.id) { row }
 
     /** Mark a report finished and ready to go out with the next upload. */
     fun markReady(row: ReportRow, onRefused: (String) -> Unit) = viewModelScope.launch {

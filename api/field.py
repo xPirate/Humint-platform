@@ -469,7 +469,14 @@ def _qr_svg(text: str) -> str | None:
         # segno writes bytes, so a text buffer here fails with a TypeError
         # that the except below would swallow into a silently missing QR.
         buf = io.BytesIO()
-        segno.make(text, error="m").save(buf, kind="svg", scale=4, border=2)
+        # border=4 because the QR specification says 4. The quiet zone is not
+        # cosmetic margin — it is how a decoder finds the edge of the symbol,
+        # and this payload renders as a version 8 code (49 modules square),
+        # which is dense enough to need every advantage. It was 2, which
+        # decodes fine on a desk and starts failing where this is actually
+        # used: a phone held up to a screen in the dark, at an angle, with
+        # the display's own glare across it.
+        segno.make(text, error="m").save(buf, kind="svg", scale=5, border=4)
         return buf.getvalue().decode("utf-8")
     except Exception:
         logger.exception("could not render enrollment QR")

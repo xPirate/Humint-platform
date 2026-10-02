@@ -1,0 +1,92 @@
+name: Bug report
+description: Something does not work the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before you paste anything: scrub your case data.** Logs and
+        screenshots from a real file contain real names. If the bug needs data
+        to reproduce, please reproduce it with the fictional exercise set in
+        `docs/exercise/`.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - "The console (the web app)"
+        - "The Android companion app"
+        - "Between the two — a field report that would not send or arrive"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the exact error text if there was one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to Entities
+        2. Select two records and press Merge
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >
+        `docker compose logs --tail 100 api` and `docker compose logs --tail
+        100 worker`. For the Android app, `adb logcat -d AndroidRuntime:E
+        '*:S'` for a crash, or `adb logcat -d --pid="$(adb shell pidof
+        org.humint.field)"` for everything it did. For a field report that
+        would not arrive, both ends. A stack trace is worth more than a
+        description of one.
+      render: shell
+  - type: input
+    id: build
+    attributes:
+      label: Which build
+      description: The release tag, or the date of the zip you installed.
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Is a model configured?
+      options:
+        - "No — running without Ollama"
+        - "Yes — the bundled Ollama container"
+        - "Yes — an Ollama instance elsewhere on my network"
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: What is it running on
+      placeholder: "Raspberry Pi 4 8GB / Debian 12 x86 / macOS 15 Apple Silicon"
+    validations:
+      required: true
+  - type: input
+    id: handset
+    attributes:
+      label: The handset, if this is about the app
+      description: >
+        Model and Android version, and whether it is a physical phone or an
+        emulator. An emulator reaches the console at 10.0.2.2, never
+        localhost — if an upload will not connect, check that first.
+      placeholder: "Pixel 7, Android 15 / emulated Pixel 7, API 35"
+    validations:
+      required: false

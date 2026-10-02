@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -104,8 +105,11 @@ fun ReportScreen(vm: FieldViewModel, reportId: String, onDone: () -> Unit) {
     val template = Templates.byKey(report.template) ?: return
     val values = remember(report.fields) { report.fields.toMap() }
 
+    // Each field writes only its own key, onto whatever the row looks like
+    // when the write happens — see FieldViewModel.edit. Writing a whole
+    // captured row here would let a slow field revert a fast one.
     fun put(key: String, value: Any?) {
-        vm.save(report.copy(fields = (values + (key to value)).toJson()))
+        vm.edit(report.id) { row -> row.copy(fields = (row.fields.toMap() + (key to value)).toJson()) }
     }
 
     Scaffold(
@@ -158,7 +162,7 @@ fun ReportScreen(vm: FieldViewModel, reportId: String, onDone: () -> Unit) {
         ) {
             Spacer(Modifier.height(2.dp))
 
-            CriticalityRow(report.criticality) { vm.save(report.copy(criticality = it)) }
+            CriticalityRow(report.criticality) { level -> vm.edit(report.id) { it.copy(criticality = level) } }
 
             template.fields.forEach { field ->
                 FormField(field, values[field.key]) { put(field.key, it) }
@@ -167,22 +171,24 @@ fun ReportScreen(vm: FieldViewModel, reportId: String, onDone: () -> Unit) {
             // Every template takes free text on top of its own fields. The
             // form can never cover everything, and the alternative is the
             // analyst leaving it out.
-            OutlinedTextField(
-                value = (report.body ?: ""),
-                onValueChange = { vm.save(report.copy(body = it.ifBlank { null })) },
-                label = { Text("Anything else") },
+            DraftTextField(
+                value = report.body.orEmpty(),
+                onCommit = { text -> vm.edit(report.id) { it.copy(body = text.ifBlank { null }) } },
+                label = "Anything else",
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
             )
 
-            PositionRow(fix, report) { note -> vm.save(report.copy(locationNote = note)) }
+            PositionRow(fix, report) { note -> vm.edit(report.id) { it.copy(locationNote = note) } }
             LaunchedEffect(fix) {
                 // Stamp the fix onto the report as it improves, so a report
                 // written over ten minutes carries the best position the
                 // phone had rather than the first one it managed.
-                fix?.let {
-                    if (report.accuracyM == null || it.accuracyM <= report.accuracyM) {
-                        vm.save(report.copy(lat = it.lat, lng = it.lng, accuracyM = it.accuracyM))
+                fix?.let { f ->
+                    vm.edit(report.id) { row ->
+                        if (row.accuracyM == null || f.accuracyM <= row.accuracyM)
+                            row.copy(lat = f.lat, lng = f.lng, accuracyM = f.accuracyM)
+                        else row
                     }
                 }
             }
@@ -196,14 +202,20 @@ fun ReportScreen(vm: FieldViewModel, reportId: String, onDone: () -> Unit) {
     }
 
     capturing?.let { kind ->
-        CaptureSheet(
-            kind = kind,
-            onDone = { captured ->
-                captured?.let { vm.attach(reportId, it, kind) }
-                capturing = null
-            },
-            onCancel = { capturing = null },
-        )
+        val finish: (org.humint.field.media.Capture.Captured?) -> Unit = { captured ->
+            captured?.let { vm.attach(reportId, it, kind) }
+            capturing = null
+        }
+        // A photo takes the whole screen; audio and video stay in a sheet.
+        // The sheet was pushing the shutter off the bottom of the display,
+        // and a camera wants a viewfinder anyway. Audio has nothing to look
+        // at and video's control is one button, so both are fine where they
+        // are.
+        if (kind == "image") {
+            PhotoCaptureScreen(onDone = finish, onCancel = { capturing = null })
+        } else {
+            CaptureSheet(kind = kind, onDone = finish, onCancel = { capturing = null })
+        }
     }
 
     if (confirmDiscard) {
@@ -270,22 +282,26 @@ private fun FormField(field: TemplateField, value: Any?, onChange: (Any?) -> Uni
             }
         }
 
-        "list" -> OutlinedTextField(
+        // One line per item while it is being typed. Splitting on every
+        // keystroke is what used to eat the newline the moment you pressed
+        // it; now the raw text is the field's own and only becomes a list
+        // when the typing stops.
+        "list" -> DraftTextField(
             value = (value as? List<*>)?.joinToString("\n").orEmpty(),
-            onValueChange = { text ->
+            onCommit = { text ->
                 onChange(text.split("\n").map { it.trim() }.filter { it.isNotEmpty() })
             },
-            label = { Text(field.label) },
-            supportingText = field.hint?.let { { Text(it) } },
+            label = field.label,
+            supportingText = field.hint,
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
             minLines = 2,
         )
 
-        "textarea" -> OutlinedTextField(
+        "textarea" -> DraftTextField(
             value = value?.toString().orEmpty(),
-            onValueChange = onChange,
-            label = { Text(field.label) },
-            supportingText = field.hint?.let { { Text(it) } },
+            onCommit = onChange,
+            label = field.label,
+            supportingText = field.hint,
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
             minLines = 3,
             keyboardOptions = KeyboardOptions(
@@ -294,14 +310,15 @@ private fun FormField(field: TemplateField, value: Any?, onChange: (Any?) -> Uni
             ),
         )
 
-        else -> OutlinedTextField(
+        else -> DraftTextField(
             value = value?.toString().orEmpty(),
-            onValueChange = { text ->
-                onChange(if (field.type == "number") text.filter { it.isDigit() } else text)
+            onCommit = onChange,
+            transform = { text ->
+                if (field.type == "number") text.filter { it.isDigit() } else text
             },
-            label = { Text(field.label) },
-            supportingText = field.hint?.let { { Text(it) } },
-            suffix = field.suffix?.let { { Text(it) } },
+            label = field.label,
+            supportingText = field.hint,
+            suffix = field.suffix,
             singleLine = true,
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
             keyboardOptions = KeyboardOptions(
@@ -355,11 +372,11 @@ private fun PositionRow(
             color = if (fix?.stale == true) FieldAmber
                     else MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        OutlinedTextField(
+        DraftTextField(
             value = report.locationNote.orEmpty(),
-            onValueChange = { onNote(it.ifBlank { null }) },
-            label = { Text("Where you were, in words") },
-            supportingText = { Text("\"kerbside opposite the gate\" — the coordinates cannot say that") },
+            onCommit = { onNote(it.ifBlank { null }) },
+            label = "Where you were, in words",
+            supportingText = "\"kerbside opposite the gate\" — the coordinates cannot say that",
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
         )
@@ -374,6 +391,9 @@ private fun CaptureRow(
     onCapture: (String) -> Unit,
     onRemove: (AttachmentRow) -> Unit,
 ) {
+    var full by remember { mutableStateOf<AttachmentRow?>(null) }
+    full?.let { FullImage(it, onClose = { full = null }) }
+
     Column {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (capture.contains("photo")) {
@@ -392,17 +412,31 @@ private fun CaptureRow(
         if (attachments.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             attachments.forEach { a ->
-                Row(Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        buildString {
-                            append(a.filename)
-                            a.durationMs?.let { append("  ${it / 1000}s") }
-                            append("  ${a.sizeBytes / 1024} KB")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                    )
+                    // A photo you cannot see is a photo you cannot check.
+                    // Before this, the first chance to find out you had
+                    // photographed your own thumb was after the upload, back
+                    // in range, hours later and nowhere near the subject.
+                    if (a.kind == "image") {
+                        AttachmentThumb(a, onOpen = { full = a })
+                        Spacer(Modifier.width(10.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            a.filename,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            buildString {
+                                a.durationMs?.let { append("${it / 1000}s · ") }
+                                append("${a.sizeBytes / 1024} KB")
+                                if (a.kind == "image") append(" · tap to check it")
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     TextButton(onClick = { onRemove(a) }) {
                         Text("Remove", color = MaterialTheme.colorScheme.error)
                     }

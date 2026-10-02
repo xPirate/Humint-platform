@@ -1,0 +1,10 @@
+# The signing keystore and its passwords never go in the repository.
+keystore.properties
+*.jks
+*.keystore
+
+.gradle/
+build/
+local.properties
+captures/
+.idea/

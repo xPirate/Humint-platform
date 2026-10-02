@@ -1,0 +1,23 @@
+# Secrets. Never commit this — it holds your database password and, if you
+# use one, your model endpoint.
+.env
+
+# Runtime data. Attachments live in a Docker volume, not the repo; these are
+# only here in case somebody bind-mounts them for a local run.
+uploads/
+backups/
+backup.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

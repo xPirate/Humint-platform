@@ -47,8 +47,8 @@ android {
         // older handset somebody already owns.
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         // SQLCipher ships a native library per ABI and they are 4-6 MB each,
         // which was a fifth of the debug APK for three architectures nothing
