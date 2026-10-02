@@ -3913,9 +3913,12 @@ megabytes in the api image to answer "how long is this" on a queue card.
 `android/` holds it, and `android/README.md` covers building and signing it.
 It compiles: `assembleDebug`, `assembleRelease` and the unit tests are all
 green on a Pixel-era toolchain (JDK 21, AGP 8.7.3, Gradle 8.11.1,
-compileSdk 35), and the release APK is about 16 MB. It has not yet been run
-on a handset, so nothing below should be taken as evidence that the camera
-or the upload behave correctly in the field — only that they build.
+compileSdk 35), and the release APK is about 17 MB. Version 1.1 is the first
+to have been run on a real handset, and four faults that an emulator had
+hidden — dropped keystrokes, a QR decoder that never matched, an unreachable
+shutter, unviewable photos — were fixed because of it. That is one round of
+testing, not a field record; read what follows as how the app is meant to
+behave, not proof that it always does.
 It lives inside this repository rather than beside it for one reason: the
 Gradle build copies `api/field_templates.json` into the APK's assets, so the
 forms on the handset and the layout on the console come from the same file.

@@ -362,6 +362,26 @@ first launch and that PIN *is* the encryption, so there is no way to recover
 the reports if it is forgotten; and the app never stores the console's
 address or token, so every upload begins by scanning a QR.
 
+### Current release
+
+**HUMINT Field 1.1** (`versionCode` 2) —
+[`humint-field-1.1.apk`](https://github.com/xPirate/humint-platform/releases/tag/v1.1),
+17,951,878 bytes.
+
+    SHA-256  65a1062facf6dd4f564c69ae48ab2182ea61449b2020d12a95da02492e8f25e1
+
+The file hash changes with every build. The signing certificate does not —
+every release is signed with the same key, which is what lets a new version
+install over the old one without losing the queue:
+
+    Signer certificate SHA-256
+    47:54:2F:4F:BE:D5:5A:9C:00:A6:1E:01:98:3C:6A:A2:
+    AA:41:F1:66:1B:DE:ED:61:01:E1:CE:4C:BB:5C:DA:A0
+
+`apksigner verify --print-certs humint-field-1.1.apk` prints it. If the file
+hash matches the release notes, the download is the file that was built; if
+the certificate matches this one, it was built by the same hands as the last.
+
 ## No Google Play Services, anywhere
 
 Deliberate, and worth keeping that way — these handsets are off-network and

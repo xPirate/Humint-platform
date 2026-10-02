@@ -206,8 +206,10 @@ Two ways to send to it:
 
 - **The Android app.** `android/` in the repository, with its own README.
   Seven forms, photos, video and voice memos, written offline and queued
-  encrypted on the handset. There is no APK to download — you build it, and
-  the README covers that.
+  encrypted on the handset. A signed APK is on the
+  [Releases page](https://github.com/xPirate/humint-platform/releases/latest)
+  — check its SHA-256 against the release notes before installing. Or build
+  it yourself; the README covers both.
 - **Anything that can POST.** The intake is three plain HTTP endpoints. The
   `curl` version is in
   [the design notes](../DESIGN.md#testing-this-yourself), and it is the

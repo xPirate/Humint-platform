@@ -100,10 +100,13 @@ memos, written offline and queued on the handset, encrypted. The app does not
 hold the console's address or its token: those are scanned off a QR at the
 moment of upload and wiped when it finishes, so a phone that is lost or seized
 gives up the reports still on it and no route to anything else. No Google Play
-Services anywhere in it, so it runs on a de-Googled handset. Source and build
-instructions in [`android/`](android/README.md) — it builds to a ~16 MB
-release APK and has been exercised on an emulated Pixel. It has not yet been
-carried anywhere by anybody, which is a different thing from working.
+Services anywhere in it, so it runs on a de-Googled handset. A signed APK
+(about 17 MB, Android 10 or later) is on the
+[Releases page](https://github.com/xPirate/humint-platform/releases/latest)
+with its SHA-256 in the notes; source, build instructions and how to verify
+the download are in [`android/`](android/README.md). Version 1.1 carries the
+fixes from its first round on real hardware — which is a start, not the same
+thing as having been carried anywhere that mattered.
 
 **Accepting one can start the record it describes.** A vehicle sighting offers
 a Vehicle with the plate, colour, make and model already in it; a person report
