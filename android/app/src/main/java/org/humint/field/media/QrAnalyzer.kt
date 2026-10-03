@@ -62,10 +62,15 @@ class QrAnalyzer(
 
     /**
      * Finder patterns — the three big squares in a QR's corners — that ZXing
-     * located in the frame being analysed. Reset at the start of every frame
-     * and only touched from the analyzer thread.
+     * located in the current decode attempt. Reset before every attempt, not
+     * every frame: a frame is decoded two or three ways, and counting across
+     * them let one visible corner, seen three times, pass for a whole code.
+     * Only touched from the analyzer thread.
      */
     private var finderPoints = 0
+
+    /** The most corner patterns any one attempt on this frame found. */
+    private var bestPoints = 0
 
     private val reader = MultiFormatReader().apply {
         setHints(
@@ -127,11 +132,11 @@ class QrAnalyzer(
         if (done) { image.close(); return }
         try {
             val n = frames.incrementAndGet()
-            finderPoints = 0
+            bestPoints = 0
             val text = decode(image, n)
             // Three corner patterns is a QR in view. Fewer can be noise —
             // a window frame or a keyboard can produce one or two.
-            if (finderPoints >= 3) lastLocatedAt.set(SystemClock.elapsedRealtime())
+            if (bestPoints >= 3) lastLocatedAt.set(SystemClock.elapsedRealtime())
             if (text != null) {
                 lastLocatedAt.set(SystemClock.elapsedRealtime())
                 // Set before posting: the next frame arrives long before the
@@ -202,6 +207,7 @@ class QrAnalyzer(
     }
 
     private fun read(source: PlanarYUVLuminanceSource): String? = try {
+        finderPoints = 0
         reader.decodeWithState(BinaryBitmap(HybridBinarizer(source)))?.text
     } catch (_: ChecksumException) {
         // Found, sampled, and failed error correction: a code is in view but
@@ -217,6 +223,7 @@ class QrAnalyzer(
         // that is all one colour. Neither is an error worth recording.
         null
     } finally {
+        bestPoints = maxOf(bestPoints, finderPoints)
         reader.reset()
     }
 }

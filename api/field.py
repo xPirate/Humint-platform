@@ -476,7 +476,16 @@ def _qr_svg(text: str) -> str | None:
         # decodes fine on a desk and starts failing where this is actually
         # used: a phone held up to a screen in the dark, at an angle, with
         # the display's own glare across it.
-        segno.make(text, error="m").save(buf, kind="svg", scale=5, border=4)
+        # omitsize swaps segno's fixed width/height for a viewBox. Without
+        # it the SVG declared itself 285px square, the stylesheet sized it to
+        # 210px, and a browser given an SVG with no viewBox crops rather than
+        # scales — so the console showed the top-left 3/4 of the code, with
+        # two of its three corner patterns cut off. A phone could find the
+        # one that was left and never read anything. With a viewBox the
+        # symbol scales to whatever box the page gives it, print card
+        # included.
+        segno.make(text, error="m").save(buf, kind="svg", scale=5, border=4,
+                                         omitsize=True)
         return buf.getvalue().decode("utf-8")
     except Exception:
         logger.exception("could not render enrollment QR")
