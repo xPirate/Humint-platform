@@ -2,15 +2,20 @@ package org.humint.field.media
 
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
+import com.google.zxing.ChecksumException
 import com.google.zxing.DecodeHintType
+import com.google.zxing.FormatException
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.ResultPointCallback
 import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -55,6 +60,13 @@ class QrAnalyzer(
 
     private val main = Handler(Looper.getMainLooper())
 
+    /**
+     * Finder patterns — the three big squares in a QR's corners — that ZXing
+     * located in the frame being analysed. Reset at the start of every frame
+     * and only touched from the analyzer thread.
+     */
+    private var finderPoints = 0
+
     private val reader = MultiFormatReader().apply {
         setHints(
             mapOf(
@@ -64,11 +76,43 @@ class QrAnalyzer(
                 // worth the CPU and is the difference between scanning first
                 // time and waving the phone about.
                 DecodeHintType.TRY_HARDER to true,
+                // Told about every finder pattern as it is found, whether or
+                // not the decode goes on to succeed. This is what lets the
+                // viewfinder say "there is a code, I just cannot read it
+                // yet" — the difference between "hold steady" and "point it
+                // at the code", which from the outside look identical.
+                DecodeHintType.NEED_RESULT_POINT_CALLBACK to
+                    ResultPointCallback { finderPoints++ },
             )
         )
     }
 
     @Volatile private var done = false
+
+    /** True once a code has been read and handed over, until [resume]. */
+    val paused: Boolean get() = done
+
+    /**
+     * Start looking again after a code was read but turned out to be no use
+     * — not an enrollment code, or one with no address in it.
+     *
+     * Without this the analyzer stayed finished after its first read, so a
+     * wrong code left a live viewfinder that had silently stopped looking:
+     * the preview moved, the right code could be held in front of it, and
+     * nothing would ever happen.
+     */
+    fun resume() {
+        lastLocatedAt.set(0)
+        done = false
+    }
+
+    /**
+     * When a code was last located in a frame — [SystemClock.elapsedRealtime],
+     * or 0 for never. Located means the corner patterns were found, or the
+     * decode got as far as the error-correction step and failed there: either
+     * way there is a QR in view that this frame could not quite read.
+     */
+    val lastLocatedAt = AtomicLong(0)
 
     /** Frames looked at since the scanner opened. */
     val frames = AtomicInteger(0)
@@ -82,9 +126,14 @@ class QrAnalyzer(
     override fun analyze(image: ImageProxy) {
         if (done) { image.close(); return }
         try {
-            frames.incrementAndGet()
-            val text = decode(image)
+            val n = frames.incrementAndGet()
+            finderPoints = 0
+            val text = decode(image, n)
+            // Three corner patterns is a QR in view. Fewer can be noise —
+            // a window frame or a keyboard can produce one or two.
+            if (finderPoints >= 3) lastLocatedAt.set(SystemClock.elapsedRealtime())
             if (text != null) {
+                lastLocatedAt.set(SystemClock.elapsedRealtime())
                 // Set before posting: the next frame arrives long before the
                 // main thread gets round to the handler, and scanning the
                 // same code twice would start two uploads.
@@ -107,54 +156,61 @@ class QrAnalyzer(
         lastError.set(t::class.java.simpleName + (t.message?.let { ": $it" } ?: ""))
     }
 
-    private fun decode(image: ImageProxy): String? {
+    private fun decode(image: ImageProxy, n: Int): String? {
         val plane = image.planes[0]
         val buffer = plane.buffer
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
 
-        var w = image.width
-        var h = image.height
-        var packed = QrFrames.pack(bytes, plane.rowStride, plane.pixelStride, w, h)
+        val w = image.width
+        val h = image.height
+        val packed = QrFrames.pack(bytes, plane.rowStride, plane.pixelStride, w, h)
+
+        // The centred square first: it is exactly what the brackets on the
+        // viewfinder enclose, it is the same whichever way the sensor is
+        // mounted, and with the background trimmed off a code that fills it
+        // binarises better than it does in the whole frame. Then the whole
+        // frame, for a code held off-centre.
+        tryDecode(packed, w, h)?.let { return it }
 
         // The sensor is mounted sideways in every phone, so a portrait
-        // viewfinder hands us a frame that is rotated. ZXing finds QR
-        // patterns at any orientation in principle, but a dense code at the
-        // edge of focus is a different matter, so try the upright frame
-        // first and then the raw one.
+        // viewfinder hands us a rotated frame. ZXing finds a QR at any
+        // orientation in principle; in practice a dense code at the edge of
+        // focus sometimes reads only upright. Rotating a full frame is the
+        // costly step, so it is tried on every third frame rather than all
+        // of them — at the analysis resolution the scanner now asks for,
+        // doing it every time would halve the frame rate it can keep up.
         val rotation = image.imageInfo.rotationDegrees
-        val candidates = ArrayList<Triple<ByteArray, Int, Int>>(2)
-        if (rotation != 0) {
+        if (rotation != 0 && n % 3 == 0) {
             val r = QrFrames.rotate(packed, w, h, rotation)
-            candidates.add(Triple(r.data, r.width, r.height))
-        }
-        candidates.add(Triple(packed, w, h))
-
-        for ((data, cw, ch) in candidates) {
-            tryDecode(data, cw, ch)?.let { return it }
+            read(PlanarYUVLuminanceSource(r.data, r.width, r.height,
+                                          0, 0, r.width, r.height, false))?.let { return it }
         }
         return null
     }
 
     private fun tryDecode(data: ByteArray, w: Int, h: Int): String? {
-        // Whole frame first. A centred square second: a code that fills only
-        // the middle of a wide frame binarises better once the empty edges
-        // are out of the histogram, which is the case the analyst hits when
-        // they hold the phone back far enough to get focus.
-        val whole = PlanarYUVLuminanceSource(data, w, h, 0, 0, w, h, false)
-        read(whole)?.let { return it }
-
-        // A square frame has no edges to trim, so the crop would just be the
-        // whole frame decoded a second time.
-        if (w == h) return null
-        val side = minOf(w, h)
-        val left = (w - side) / 2
-        val top = (h - side) / 2
-        return read(PlanarYUVLuminanceSource(data, w, h, left, top, side, side, false))
+        if (w != h) {
+            val side = minOf(w, h)
+            val left = (w - side) / 2
+            val top = (h - side) / 2
+            read(PlanarYUVLuminanceSource(data, w, h, left, top, side, side, false))
+                ?.let { return it }
+        }
+        // A square frame has no edges to trim, so it is only decoded once.
+        return read(PlanarYUVLuminanceSource(data, w, h, 0, 0, w, h, false))
     }
 
     private fun read(source: PlanarYUVLuminanceSource): String? = try {
         reader.decodeWithState(BinaryBitmap(HybridBinarizer(source)))?.text
+    } catch (_: ChecksumException) {
+        // Found, sampled, and failed error correction: a code is in view but
+        // blurred, glared or too small. Worth saying so.
+        lastLocatedAt.set(SystemClock.elapsedRealtime())
+        null
+    } catch (_: FormatException) {
+        lastLocatedAt.set(SystemClock.elapsedRealtime())
+        null
     } catch (_: Throwable) {
         // NotFoundException is the overwhelmingly common case — this frame
         // simply had no code in it — and the binarizer can throw on a frame

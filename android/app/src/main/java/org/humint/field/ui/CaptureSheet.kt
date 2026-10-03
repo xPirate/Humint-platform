@@ -16,6 +16,7 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -228,7 +229,12 @@ private fun AudioPane(onDone: (Capture.Captured?) -> Unit) {
 /** The viewfinder. Bound to the composition's lifecycle, so it is released
  *  the moment the sheet closes rather than when the GC gets round to it. */
 @Composable
-fun CameraPreview(bind: (ProcessCameraProvider, Preview) -> Unit) {
+fun CameraPreview(
+    bind: (ProcessCameraProvider, Preview) -> Unit,
+    // Drawn over the viewfinder, the same size as it — the scanner's
+    // brackets live here. Empty for every other camera in the app.
+    overlay: @Composable BoxScope.() -> Unit = {},
+) {
     val context = LocalContext.current
     Box(
         Modifier
@@ -254,6 +260,7 @@ fun CameraPreview(bind: (ProcessCameraProvider, Preview) -> Unit) {
             },
             modifier = Modifier.fillMaxWidth(),
         )
+        overlay()
     }
     DisposableEffect(Unit) {
         onDispose {
